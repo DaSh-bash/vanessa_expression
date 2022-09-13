@@ -36,6 +36,38 @@ less sample_sheet.csv
 # /crex/proj/uppstore2017185/b2014034_nobackup/Venkat/vanessa_cardui_project/RNA_seq/Scripts/work
 
 cd /crex/proj/uppstore2017185/b2014034_nobackup/Venkat/vanessa_cardui_project/RNA_seq/Scripts
+#Venkat's running
+#nextflow run nf-core/rnaseq -profile uppmax --project snic2022-5-34 --fasta /proj/uppstore2017185/b2014034_nobackup/Venkat/vanessa_cardui_project/RNA_seq/genome_data/GCA_905220365.1_ilVanCard2.1_genomic_chroms_masked.fna --gff /proj/uppstore2017185/b2014034_nobackup/Venkat/vanessa_cardui_project/RNA_seq/genome_data/genes.gff --outdir /proj/uppstore2017185/b2014034_nobackup/Venkat/vanessa_cardui_project/RNA_seq/RNA_Seq/ --input sample_sheet.csv
+
+#Updated run with better annotation file
+
+#Copying new file
+cp /crex/proj/uppstore2017185/b2014034_nobackup/Jesper/VanessaDNAm/annotation/vcard.gtf /proj/uppstore2017185/b2014034_nobackup/Venkat/vanessa_cardui_project/RNA_seq/genome_data/vcard.gtf
+
+nextflow run nf-core/rnaseq -profile uppmax --project snic2022-5-34 --fasta /proj/uppstore2017185/b2014034_nobackup/Venkat/vanessa_cardui_project/RNA_seq/genome_data/GCA_905220365.1_ilVanCard2.1_genomic_chroms_masked.fna --gff /proj/uppstore2017185/b2014034_nobackup/Venkat/vanessa_cardui_project/RNA_seq/genome_data/vcard.gtf --outdir /proj/uppstore2017185/b2014034_nobackup/Venkat/vanessa_cardui_project/RNA_seq/RNA_Seq/ --input sample_sheet.csv -resume 7ad7f994-a6a9-4534-90f8-a992279b046c
+
+#Nextflow runs
+#ERROR: Validation of pipeline parameters failed!
+
+
+#* --gff: string [/proj/uppstore2017185/b2014034_nobackup/Venkat/vanessa_cardui_project/RNA_seq/genome_data/vcard.gtf] does not match pattern ^\S+\.gff(\.gz)?$ (/proj/uppstore2017185/b2014034_nobackup/Venkat/vanessa_cardui_project/RNA_seq/genome_data/vcard.gtf)
+
+#Trying to trick the Nextflow
+cp genes.gff vcard.gff
+nextflow run nf-core/rnaseq -profile uppmax --project snic2022-5-34 --fasta /proj/uppstore2017185/b2014034_nobackup/Venkat/vanessa_cardui_project/RNA_seq/genome_data/GCA_905220365.1_ilVanCard2.1_genomic_chroms_masked.fna --gff /proj/uppstore2017185/b2014034_nobackup/Venkat/vanessa_cardui_project/RNA_seq/genome_data/genes.gff --outdir /proj/uppstore2017185/b2014034_nobackup/Venkat/vanessa_cardui_project/RNA_seq/RNA_Seq/ --input sample_sheet.csv -resume 7ad7f994-a6a9-4534-90f8-a992279b046c
+
+#N E X T F L O W  ~  version 21.10.6
+#Launching `nf-core/rnaseq` [drunk_venter] - revision: 89bf536ce4 [master]
+#Can't find a run with the specified id: 7ad7f994-a6a9-4534-90f8-a992279b046c -- Execution can't be resumed
+
 nextflow run nf-core/rnaseq -profile uppmax --project snic2022-5-34 --fasta /proj/uppstore2017185/b2014034_nobackup/Venkat/vanessa_cardui_project/RNA_seq/genome_data/GCA_905220365.1_ilVanCard2.1_genomic_chroms_masked.fna --gff /proj/uppstore2017185/b2014034_nobackup/Venkat/vanessa_cardui_project/RNA_seq/genome_data/genes.gff --outdir /proj/uppstore2017185/b2014034_nobackup/Venkat/vanessa_cardui_project/RNA_seq/RNA_Seq/ --input sample_sheet.csv -resume
 
-#7ad7f994-a6a9-4534-90f8-a992279b046c
+#Quick run, checking results
+
+#Running from the screen
+#https://linuxize.com/post/how-to-use-linux-screen/
+screen -S nextflow_rnaseq
+
+#Reading about the next steps
+#https://hbctraining.github.io/DGE_workshop_salmon/lessons/02_DGE_count_normalization.html
+#http://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html
