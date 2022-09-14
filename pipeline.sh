@@ -71,3 +71,33 @@ screen -S nextflow_rnaseq
 #Reading about the next steps
 #https://hbctraining.github.io/DGE_workshop_salmon/lessons/02_DGE_count_normalization.html
 #http://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html
+
+#Run failed
+#Checking temporary files
+tree /crex/proj/uppstore2017185/b2014034_nobackup/Venkat/vanessa_cardui_project/RNA_seq/Scripts/work > folder.structure
+
+#Checking failed report
+sftp sftp daria@rackham.uppmax.uu.se
+get *09-12*
+
+#Making new output folder
+cd /crex/proj/uppstore2017185/b2014034_nobackup/Venkat/vanessa_cardui_project/RNA_seq
+mkdir RNA_Seq_DSh_Mock
+
+#Specifying new output dir
+
+nextflow run nf-core/rnaseq -profile uppmax --project snic2022-5-34 --fasta /proj/uppstore2017185/b2014034_nobackup/Venkat/vanessa_cardui_project/RNA_seq/genome_data/GCA_905220365.1_ilVanCard2.1_genomic_chroms_masked.fna --gff /proj/uppstore2017185/b2014034_nobackup/Venkat/vanessa_cardui_project/RNA_seq/genome_data/genes.gff --outdir /proj/uppstore2017185/b2014034_nobackup/Venkat/vanessa_cardui_project/RNA_seq/RNA_Seq_DSh_Mock/ --input sample_sheet_mock.csv -resume
+
+#Benchmarking Nextflow using mock dataset
+#need new sample_sheet
+head -n 2 sample_sheet.csv > sample_sheet_mock.csv
+
+#Reducing size of previous outputs
+nohup tar -cvf work.tar work/* &
+
+#Checking gff
+cd /proj/uppstore2017185/b2014034_nobackup/Venkat/vanessa_cardui_project/RNA_seq/
+cp genes.gtf Vanessa_artif.gff
+
+#fixing header
+#Adding
