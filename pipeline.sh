@@ -101,3 +101,77 @@ cp genes.gtf Vanessa_artif.gff
 
 #fixing header
 #Adding
+
+#Checking Jesper's Scripts
+
+#!/bin/bash -l
+ml bioinfo-tools Nextflow/21.10.6
+export NXF_HOME="/crex/proj/uppstore2017185/b2014034_nobackup/Jesper/VanessaDNAm/rnaseq_pipe"
+NXF_OPTS='-Xms1g -Xmx4g'
+#Do I need a transcriptome file?
+gtf="../annotation/vcard.gtf"
+fasta="../reference/GCA_905220365.1_ilVanCard2.1_genomic_chroms.fasta"
+nextflow run nf-core/rnaseq -resume "First_try" --input sample_sheet.csv -profile uppmax --project snic2022-5-34 --max_cpus 20 --max_memory 128GB --fasta $fasta --gtf $gtf --outdir ./results --skip_preseq
+
+#Solving strandedness, downloading reports
+cd /proj/uppstore2017185/b2014034/private/raw_data/Vanessa/Vcardui_RNA_migration/P20253/00-Reports
+
+#### Make small test
+cd /proj/uppstore2017185/b2014034/nobackup/Dasha
+mkdir VanessaRNAseq
+cp /crex/proj/uppstore2017185/b2014034_nobackup/Jesper/VanessaDNAm/rnaseq_pipe/run_pipe.sh .
+cp /proj/uppstore2017185/b2014034/nobackup/Venkat/vanessa_cardui_project/RNA_seq/Scripts/sample_sheet_mock.csv
+
+#Folder organized
+#Sample sheet updated manually
+#Selected two individuals, passed manual contamination check from NGI reports
+head -n 3 sample_sheet.csv > sample_sheet_test.csv
+#Manual fix of strandedness
+#Creating run pipeline
+
+#!/bin/bash -l
+module load bioinfo-tools Nextflow/21.10.6
+
+#Confiruging Nextflow in the working directory
+export NXF_HOME="/crex/proj/uppstore2017185/b2014034/nobackup/Dasha/VanessaRNAseq/test"
+NXF_OPTS='-Xms1g -Xmx4g'
+
+#Providing full path to new data
+gtf="/crex/proj/uppstore2017185/b2014034/nobackup/Dasha/VanessaRNAseq/genome_data/vcard.gtf"
+fasta="/proj/uppstore2017185/b2014034/nobackup/Dasha/VanessaRNAseq/genome_data/GCA_905220365.1_ilVanCard2.1_genomic_chroms_masked.fna"
+nextflow run nf-core/rnaseq --input sample_sheet_test.csv -profile uppmax --project snic2022-5-34 --max_cpus 20 --max_memory 128GB --fasta $fasta --gtf $gtf --outdir .
+
+#Running in the attached screen
+screen -r 12709
+cd /crex/proj/uppstore2017185/b2014034/nobackup/Dasha/VanessaRNAseq/test
+bash run_rnaseq_test.sh
+#Running, detach
+
+###Check failed samples
+#HDAL_ADM_A_18
+#HDLI_III_H_18
+#Decided to keep all the samples
+
+###Make new sample_sheet
+nano create_samplesheet.sh
+bash create_samplesheet.sh > sample_sheet.csv
+
+###Make new scripts
+
+#!/bin/bash -l
+module load bioinfo-tools Nextflow/21.10.6
+
+#Confiruging Nextflow in the working directory
+export NXF_HOME="/crex/proj/uppstore2017185/b2014034/nobackup/Dasha/VanessaRNAseq"
+NXF_OPTS='-Xms1g -Xmx4g'
+
+#Providing full path to new data
+gtf="/crex/proj/uppstore2017185/b2014034/nobackup/Dasha/VanessaRNAseq/genome_data/vcard.gtf"
+fasta="/proj/uppstore2017185/b2014034/nobackup/Dasha/VanessaRNAseq/genome_data/GCA_905220365.1_ilVanCard2.1_genomic_chroms_masked.fna"
+nextflow run nf-core/rnaseq --input sample_sheet.csv -profile uppmax --project snic2022-5-34 --max_cpus 20 --max_memory 128GB --fasta $fasta --gtf $gtf --outdir ./results
+
+
+###Check small test results
+screen -r 12709
+
+###Run big experiment
