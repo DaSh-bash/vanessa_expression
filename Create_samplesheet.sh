@@ -6,5 +6,5 @@ for files in "${!groups[@]}"; do
         #echo "$files - ${groups[$files]}";
         read1=$(cat /proj/uppstore2017185/b2014034_nobackup/Venkat/vanessa_cardui_project/RNA_seq/genome_data/sample_info.txt | grep ${groups[$files]} | grep 'R1')
         read2=$(cat /proj/uppstore2017185/b2014034_nobackup/Venkat/vanessa_cardui_project/RNA_seq/genome_data/sample_info.txt | grep ${groups[$files]} | grep 'R2')
-        echo "$files,$read1,$read2,unstranded"
+        echo "$files,$read1,$read2,forward"
 done
