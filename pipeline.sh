@@ -174,4 +174,154 @@ nextflow run nf-core/rnaseq --input sample_sheet.csv -profile uppmax --project s
 ###Check small test results
 screen -r 12709
 
+#Didn't run fully
+-resume "reverent_feynman"
+
+#!/bin/bash -l
+module load bioinfo-tools Nextflow/21.10.6
+
+#Confiruging Nextflow in the working directory
+export NXF_HOME="/crex/proj/uppstore2017185/b2014034/nobackup/Dasha/VanessaRNAseq"
+NXF_OPTS='-Xms1g -Xmx4g'
+
+#Providing full path to new data
+gtf="/crex/proj/uppstore2017185/b2014034/nobackup/Dasha/VanessaRNAseq/genome_data/vcard.gtf"
+fasta="/proj/uppstore2017185/b2014034/nobackup/Dasha/VanessaRNAseq/genome_data/GCA_905220365.1_ilVanCard2.1_genomic_chroms_masked.fna"
+nextflow run nf-core/rnaseq --input sample_sheet.csv -profile uppmax --project snic2022-5-34 -resume "reverent_feynman" --fasta $fasta --gtf $gtf --outdir ./results
+
+
+modest_gates
+
+#StringTie keeps failing, skipping?
+
+#!/bin/bash -l
+module load bioinfo-tools Nextflow/21.10.6
+
+#Confiruging Nextflow in the working directory
+export NXF_HOME="/crex/proj/uppstore2017185/b2014034/nobackup/Dasha/VanessaRNAseq/test"
+NXF_OPTS='-Xms1g -Xmx4g'
+
+#Providing full path to new data
+gtf="/crex/proj/uppstore2017185/b2014034/nobackup/Dasha/VanessaRNAseq/genome_data/vcard.gtf"
+fasta="/proj/uppstore2017185/b2014034/nobackup/Dasha/VanessaRNAseq/genome_data/GCA_905220365.1_ilVanCard2.1_genomic_chroms_masked.fna"
+
+#Running script
+nextflow run nf-core/rnaseq --input sample_sheet_test_1sam.csv -profile uppmax --project snic2022-5-34 -resume "modest_gates" --fasta $fasta --gtf $gtf --outdir . --skip_stringtie
+
+
+### Design smaller experiment
+Group	Stage	Head	M/F	Abdomen	M/F	Tot
+AL	A	4	-	5	-	9
+LI	A	5	-	5	-	10
+
+HD=High density
+LD=Low density
+AL=Ad libitum
+LI=Limited food
+
+mkdir lack_resource
+bash create_samplesheetLR.sh > sample_sheetLR.csv
+
+#!/bin/bash -l
+module load bioinfo-tools Nextflow/21.10.6
+
+#Confiruging Nextflow in the working directory
+export NXF_HOME="/crex/proj/uppstore2017185/b2014034/nobackup/Dasha/VanessaRNAseq/lack_resource"
+NXF_OPTS='-Xms1g -Xmx4g'
+
+#Providing full path to new data
+gtf="/crex/proj/uppstore2017185/b2014034/nobackup/Dasha/VanessaRNAseq/genome_data/vcard.gtf"
+fasta="/proj/uppstore2017185/b2014034/nobackup/Dasha/VanessaRNAseq/genome_data/GCA_905220365.1_ilVanCard2.1_genomic_chroms_masked.fna"
+
+#Running script
+nextflow run nf-core/rnaseq --input sample_sheetLR.csv -profile uppmax --project snic2022-5-34 --fasta $fasta --gtf $gtf --outdir ./results --skip_stringtie
+
+nano run_rnaseq_LR.sh
+
+#Make slurm script
+
+#!/bin/bash -l
+#SBATCH -A snic2022-5-34
+#SBATCH --job-name=nextflow_rnaseq
+#SBATCH -p node -n 4
+#SBATCH --time=5-00:00:00
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=daria.shipilina@gmail.com
+
+cd /crex/proj/uppstore2017185/b2014034/nobackup/Dasha/VanessaRNAseq/lack_resource
+bash run_rnaseq_LR.sh
+
+
+#############################################################################################################
 ###Run big experiment
+mkdir HD_LD_stages
+
+#Make new sample list
+cp *sheet* HD_LD_stages/
+cp run_rnaseq_LR* ../HD_LD_stages/
+nano create_samplesheetHDLD.sh #see folder
+bash create_samplesheetHDLD.sh > sample_sheetHDLD.csv
+
+
+##Run script
+
+#!/bin/bash -l
+module load bioinfo-tools Nextflow/21.10.6
+
+#Confiruging Nextflow in the working directory
+export NXF_HOME="/crex/proj/uppstore2017185/b2014034/nobackup/Dasha/VanessaRNAseq/HD_LD_stages"
+NXF_OPTS='-Xms1g -Xmx4g'
+
+#Providing full path to new data
+gtf="/crex/proj/uppstore2017185/b2014034/nobackup/Dasha/VanessaRNAseq/genome_data/vcard.gtf"
+fasta="/proj/uppstore2017185/b2014034/nobackup/Dasha/VanessaRNAseq/genome_data/GCA_905220365.1_ilVanCard2.1_genomic_chroms_masked.fna"
+
+#Running script
+nextflow run nf-core/rnaseq --input sample_sheetHDLD.csv -profile uppmax --project snic2022-5-34 --fasta $fasta --gtf $gtf --outdir ./results --skip_stringtie
+
+
+##SLURM script
+
+#!/bin/bash -l
+#SBATCH -A snic2022-5-34
+#SBATCH --job-name=nextflow_rnaseq
+#SBATCH -p node -n 4
+#SBATCH --time=7-00:00:00
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=daria.shipilina@gmail.com
+
+cd /crex/proj/uppstore2017185/b2014034/nobackup/Dasha/VanessaRNAseq/HD_LD_stages
+bash run_rnaseq_HDLD.sh
+
+#Running
+Slurm Job_id=29831635 Name=nextflow_rnaseq Began, Queued time 00:02:33
+
+#Analysis moves to R
+#Loading data from the cluster
+cd /crex/proj/uppstore2017185/b2014034/nobackup/Dasha/VanessaRNAseq/lack_resource/results/star_salmon
+
+#HDLD set failed, getting summary
+#star is timing out and uppmax killing the pipeline. I only found one option to control it: --max_time
+#However, it says  default: '240.h' , so should have been ok w/o this flag
+#This run was:
+[sharp_meitner]
+
+#Writing resume Scripts
+
+#!/bin/bash -l
+module load bioinfo-tools Nextflow/21.10.6
+
+#Confiruging Nextflow in the working directory
+export NXF_HOME="/crex/proj/uppstore2017185/b2014034/nobackup/Dasha/VanessaRNAseq/HD_LD_stages"
+NXF_OPTS='-Xms1g -Xmx4g'
+
+#Providing full path to new data
+gtf="/crex/proj/uppstore2017185/b2014034/nobackup/Dasha/VanessaRNAseq/genome_data/vcard.gtf"
+fasta="/proj/uppstore2017185/b2014034/nobackup/Dasha/VanessaRNAseq/genome_data/GCA_905220365.1_ilVanCard2.1_genomic_chroms_masked.fna"
+
+#Running script
+nextflow run nf-core/rnaseq --input sample_sheetHDLD.csv -profile uppmax --project snic2022-5-34 -resume "sharp_meitner" --max_time '100.h' --fasta $fasta --gtf $gtf --outdir ./results --skip_stringtie
+
+##Preparing slurm jobs
+nano run_rnaseq_HDLD_resume1.sh
+cp run_rnaseq_HDLD.slurm  run_rnaseq_HDLD_resume1.slurm
