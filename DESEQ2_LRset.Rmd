@@ -23,6 +23,22 @@ library( "DESeq2" )
 library(ggplot2)
 ```
 
+
+```{r}
+library(plyr)
+```
+
+
+
+```{r}
+names(colDataLR)[names(colDataLR)=="Group3"]<-"tissue"
+names(colDataLR)[names(colDataLR)=="Group1"]<-"condition"
+```
+
+https://www.geeksforgeeks.org/r-dataframe-manipulation/
+
+
+
 ```{r}
 load("/Users/dshipilina/GitHub/VanessaExpression/deseq2_qc/deseq2.dds.RData")
 #dds
@@ -66,19 +82,36 @@ plotPCA(vsdata, intgroup="Group1")
 
 ```{r}
 ```
-```{r}
+
 
 ```
 
 Diary for Sept 20th
+
+**Creating dataset based on original counts from nf-core pipeline**
 ```{r}
 countLR<- dds@assays@data@listData[["counts"]]
 colDataLR <- colData(dds)
-dddsLR <- DESeqDataSetFromMatrix(countData=countLR, colData =colDataLR, design = ~Group3)
+ddsLR <- DESeqDataSetFromMatrix(countData=countLR, colData =colDataLR, design = ~Group3)
+```
+```{r}
+keep <- rowSums(counts(ddsLR)) >= 10
+ddsLR <- ddsLR[keep,]
+head(ddsLR)
+```
+
+
+```{r}
+ddsLR <- DESeq(ddsLR)
+resLR <- results(ddsLR)
 resLR <- resLR[order(resLR$padj),]
 head(resLR)
 ```
 
+
+```{r}
+plotMA(resLR, ylim=c(-20,20))
+```
 
 ```{r}
 #reset par
@@ -96,11 +129,11 @@ with(subset(resLR, padj<.01 & abs(log2FoldChange)>2), points(log2FoldChange, -lo
 vsdata <- vst(dddsLR, blind=FALSE)
 plotPCA(vsdata, intgroup="Group3")
 ```
-```
 
 
 
-Checking genes separately
+
+**Checking genes separately**
 ```{bash}
 grep "Vcard_DToL11948" makerrun3.all.maker.eggnog.filtered.genes.gff 
 ```
@@ -110,3 +143,39 @@ grep "Vcard_DToL11948" makerrun3.all.maker.eggnog.filtered.genes.gff
 grep "Vcard_DToL02239" makerrun3.all.maker.eggnog.filtered.genes.gff 
 ```
 Serpentine type 7TM GPCR chemoreceptor Srsx
+
+
+Differntial expression in abdoment tissue 
+
+Preparing data
+```{r}
+load("/Users/dshipilina/GitHub/VanessaExpression/deseq2_qc/deseq2.dds.RData")
+head(colData(dds))
+countLR<- dds@assays@data@listData[["counts"]]
+colDataLR <- colData(dds)
+names(colDataLR)[names(colDataLR)=="Group3"]<-"tissue"
+names(colDataLR)[names(colDataLR)=="Group1"]<-"condition"
+colDataLR=colDataLR[colDataLR$tissue == "A", ] 
+```
+Assembilng Deseq datast
+```{r}
+ddsLR <- DESeqDataSetFromMatrix(countData=countLR, colData =colDataLR, design = ~condition)
+keep <- rowSums(counts(ddsLR)) >= 20
+ddsLR <- ddsLR[keep,]
+head(ddsLR)
+```
+Analysis
+```{r}
+ddsLR <- DESeq(ddsLR)
+resLR <- results(ddsLR)
+resLR <- resLR[order(resLR$padj),]
+head(resLR)
+```
+
+ Plotting
+```{r}
+plotMA(resLR, ylim=c(-2,2))
+vsdata <- vst(ddsLR, blind=FALSE)
+plotPCA(vsdata, intgroup="condition")
+```
+

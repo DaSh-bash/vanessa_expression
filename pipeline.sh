@@ -325,3 +325,32 @@ nextflow run nf-core/rnaseq --input sample_sheetHDLD.csv -profile uppmax --proje
 ##Preparing slurm jobs
 nano run_rnaseq_HDLD_resume1.sh
 cp run_rnaseq_HDLD.slurm  run_rnaseq_HDLD_resume1.slurm
+
+###Crushed again
+
+cd /crex/proj/uppstore2017185/b2014034/nobackup/Dasha/VanessaRNAseq/HD_LD_stages/assets/nf-core/rnaseq/conf
+nano customVanessa.config
+
+#Custom config file
+process {
+    withName: 'NFCORE_RNASEQ:RNASEQ:ALIGN_STAR:STAR_ALIGN' {
+        time = 100.h
+    }
+}
+
+#Writing resume-2 Scripts
+
+#!/bin/bash -l
+module load bioinfo-tools Nextflow/21.10.6
+
+#Confiruging Nextflow in the working directory
+export NXF_HOME="/crex/proj/uppstore2017185/b2014034/nobackup/Dasha/VanessaRNAseq/HD_LD_stages"
+NXF_OPTS='-Xms1g -Xmx4g'
+
+#Providing full path to new data
+gtf="/crex/proj/uppstore2017185/b2014034/nobackup/Dasha/VanessaRNAseq/genome_data/vcard.gtf"
+fasta="/proj/uppstore2017185/b2014034/nobackup/Dasha/VanessaRNAseq/genome_data/GCA_905220365.1_ilVanCard2.1_genomic_chroms_masked.fna"
+config="/crex/proj/uppstore2017185/b2014034/nobackup/Dasha/VanessaRNAseq/HD_LD_stages/assets/nf-core/rnaseq/conf/customVanessa.config"
+
+#Running script
+nextflow run nf-core/rnaseq --input sample_sheetHDLD.csv -profile uppmax -c $config --project snic2022-5-34 -resume "sad_murdock" --max_time '100.h' --fasta $fasta --gtf $gtf --outdir ./results --skip_stringtie
