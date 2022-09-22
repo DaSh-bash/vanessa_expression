@@ -353,4 +353,8 @@ fasta="/proj/uppstore2017185/b2014034/nobackup/Dasha/VanessaRNAseq/genome_data/G
 config="/crex/proj/uppstore2017185/b2014034/nobackup/Dasha/VanessaRNAseq/HD_LD_stages/assets/nf-core/rnaseq/conf/customVanessa.config"
 
 #Running script
-nextflow run nf-core/rnaseq --input sample_sheetHDLD.csv -profile uppmax -c $config --project snic2022-5-34 -resume "sad_murdock" --max_time '100.h' --fasta $fasta --gtf $gtf --outdir ./results --skip_stringtie
+nextflow run nf-core/rnaseq --input sample_sheetHDLD.csv -profile uppmax -c $config --project snic2022-5-34 -resume "sad_murdock" --fasta $fasta --gtf $gtf --outdir ./results --skip_stringtie
+
+
+nano nano  run_rnaseq_HDLD_resume2.sh
+cp run_rnaseq_HDLD_resume1.slurm run_rnaseq_HDLD_resume2.slurm
