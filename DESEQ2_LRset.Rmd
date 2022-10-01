@@ -1,181 +1,155 @@
 ---
-title: "R Notebook"
+title: "*Vanessa cardui* DE"
 output: html_notebook
 ---
 
-This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+# Differntial expression in *Vanessa cardui* adults
+Experimental set up was prepared with adult females in two food availability conditions: ad libitum and no resources, to analyze the influence that environmental conditions may have on investment in migration or reproduction in imagines
 
-Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+## Abdomen tissue 
+In this section we analyse differential expression in the abdomen tissue
 
-```{r}
-plot(cars)
-```
 
-Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
 
-When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
-
-The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
-
+**Preparing data**
+We upload count data from the DESeq2 object crated within the nf-core rnasq pipeline. Pipeline was run for the entire experimental dataset therefore needs to be split into different sets/tissues:
 
 ```{r}
-library( "DESeq2" )
-library(ggplot2)
-```
+load("/Users/dshipilina/GitHub/VanessaExpression/deseq2_qc/deseq2.dds.RData") #loading file
+countLR<- dds@assays@data@listData[["counts"]] #reloading count data
+colDataLR <- colData(dds) #reloading metadata 
 
-
-```{r}
-library(plyr)
-```
-
-
-
-```{r}
+#Renaming columns for clarity
 names(colDataLR)[names(colDataLR)=="Group3"]<-"tissue"
 names(colDataLR)[names(colDataLR)=="Group1"]<-"condition"
+
+#Checking resulting tables
+head(countLR)
+head(colDataLR)
 ```
 
-https://www.geeksforgeeks.org/r-dataframe-manipulation/
+Pipeline was run for the entire experimental dataset therefore needs to be split into different sets/tissues:
 
+```{r}
+colDataLRab<-colDataLR[colDataLR$tissue == "A", ] #selecting abdomen samples only
+#selecting samples with abdomen tissue based on ID 
+countLRab<-countLR[,c(1,2,3,4,5,10,11,12,13,14)]
+names(colDataLRab)[names(colDataLRab)=="Group3"]<-"tissue"
+names(colDataLRab)[names(colDataLRab)=="Group1"]<-"condition"
+
+head(countLR)
+head(colDataLR)
+```
+
+
+Constructing DESeq2 object, at this point counts are transformed according to the DESeq specific algorithm.
+Current hypothsis includes split into treatment groups *only* (~condition), filtering out genes with less then 10 total counts 
+```{r}
+ddsLRab <- DESeqDataSetFromMatrix(countData=countLRab, colData =colDataLRab, design = ~condition)
+
+#Basic filtering
+keep <- rowSums(counts(ddsLRab)) >= 10
+ddsLRab <- ddsLRab[keep,]
+head(ddsLRab)
+```
+
+
+**DESeq analysis**
+Main valuation, calculation of p-values
+```{r}
+#ddsLRab <- DESeq(ddsLRab) #running the main function
+resLRab <- results(ddsLRab)
+resLRab <- resLRab[order(resLRab$padj),]
+head(resLRab)
+summary(resLRab)
+```
+
+Setting up p-value to 0.05
+```{r}
+res05 <- results(ddsLRab, alpha=0.05)
+summary(res05)
+```
+
+
+
+Log fold change shrinkage is recommended for visualization and ranking, her we follow main DESEq2 vignette exactly
+
+"Shrinkage of effect size (LFC estimates) is useful for visualization and ranking of genes. To shrink the LFC, we pass the dds object to the function lfcShrink. Below we specify to use the apeglm method for effect size shrinkage (Zhu, Ibrahim, and Love 2018), which improves on the previous estimator.
+
+We provide the dds object and the name or number of the coefficient we want to shrink, where the number refers to the order of the coefficient as it appears in resultsNames(dds)."
 
 
 ```{r}
-load("/Users/dshipilina/GitHub/VanessaExpression/deseq2_qc/deseq2.dds.RData")
-#dds
-head(colData(dds))
+head(resultsNames(ddsLRab))
+resLFC <- lfcShrink(ddsLRab, coef="condition_LI_vs_AL", type="apeglm")
+resLFC
 ```
 
+
+Visual exploration of the results
+
+We us first 100 significant genes to build a PCA plot:
 ```{r}
-dds@colData
-keep <- rowSums(counts(dds)) >= 10
-dds <- dds[keep,]
+vsdata <- vst(ddsLRab, blind=FALSE)
+plotPCA(vsdata, intgroup=c("condition"))
 ```
 
-Need to assign groups!!!!
-
+We use function plotMA, that shows the log2 fold changes attributable to a given variable over the mean of normalized counts for all the samples in the DESeqDataSet. Points are colored blue if the adjusted p-value is less than 0.1.
 ```{r}
-design(dds)<- ~ 2
-design(dds)
+plotMA(resLRab, ylim=c(-5,5))
 ```
+
+Checking significant gene candidates:
 ```{r}
-res <- results(dds)
-head(results(dds, tidy=TRUE))
-#reset par
-par(mfrow=c(1,1))
-# Make a basic volcano plot
-with(res, plot(log2FoldChange, -log10(pvalue), pch=20, main="Volcano plot", xlim=c(-3,3)))
- 
-# Add colored points: blue if padj<0.01, red if log2FC>1 and padj<0.05)
-with(subset(res, padj<.01 ), points(log2FoldChange, -log10(pvalue), pch=20, col="blue"))
-with(subset(res, padj<.01 & abs(log2FoldChange)>2), points(log2FoldChange, -log10(pvalue), pch=20, col="red"))
+res <- resLRab[order(resLRab$padj),]
+head(res, 10)
+
+#Plotting these genes
+plotCounts(ddsLRab, gene="Vcard_DToL13592", intgroup="condition")
+plotCounts(ddsLRab, gene="Vcard_DToL04829", intgroup="condition")
+plotCounts(ddsLRab, gene="Vcard_DToL13539", intgroup="condition")
+plotCounts(ddsLRab, gene="Vcard_DToL02600", intgroup="condition")
+plotCounts(ddsLRab, gene="Vcard_DToL10357", intgroup="condition")
+plotCounts(ddsLRab, gene="Vcard_DToL13220", intgroup="condition")
+plotCounts(ddsLRab, gene="Vcard_DToL16018", intgroup="condition")
 ```
 
-```{r}
-```
-
-
-```{r}
-vsdata <- vst(dds, blind=FALSE)
-plotPCA(vsdata, intgroup="Group1")
-```
-
-
-```{r}
-```
-
-
-```
-
-Diary for Sept 20th
-
-**Creating dataset based on original counts from nf-core pipeline**
-```{r}
-countLR<- dds@assays@data@listData[["counts"]]
-colDataLR <- colData(dds)
-ddsLR <- DESeqDataSetFromMatrix(countData=countLR, colData =colDataLR, design = ~Group3)
-```
-```{r}
-keep <- rowSums(counts(ddsLR)) >= 10
-ddsLR <- ddsLR[keep,]
-head(ddsLR)
-```
-
-
-```{r}
-ddsLR <- DESeq(ddsLR)
-resLR <- results(ddsLR)
-resLR <- resLR[order(resLR$padj),]
-head(resLR)
-```
-
-
-```{r}
-plotMA(resLR, ylim=c(-20,20))
-```
-
-```{r}
-#reset par
-par(mfrow=c(1,1))
-# Make a basic volcano plot
-with(resLR, plot(log2FoldChange, -log10(pvalue), pch=20, main="Volcano plot", xlim=c(-3,3)))
-
-# Add colored points: blue if padj<0.01, red if log2FC>1 and padj<0.05)
-with(subset(resLR, padj<.01 ), points(log2FoldChange, -log10(pvalue), pch=20, col="blue"))
-with(subset(resLR, padj<.01 & abs(log2FoldChange)>2), points(log2FoldChange, -log10(pvalue), pch=20, col="red"))
-```
-
-
-```{r}
-vsdata <- vst(dddsLR, blind=FALSE)
-plotPCA(vsdata, intgroup="Group3")
-```
-
-
-
-
-**Checking genes separately**
-```{bash}
-grep "Vcard_DToL11948" makerrun3.all.maker.eggnog.filtered.genes.gff 
-```
-7 transmembrane receptor (rhodopsin family)
+Checking functions of the differentialy expressed genes
 
 ```{bash}
-grep "Vcard_DToL02239" makerrun3.all.maker.eggnog.filtered.genes.gff 
-```
-Serpentine type 7TM GPCR chemoreceptor Srsx
-
-
-Differntial expression in abdoment tissue 
-
-Preparing data
-```{r}
-load("/Users/dshipilina/GitHub/VanessaExpression/deseq2_qc/deseq2.dds.RData")
-head(colData(dds))
-countLR<- dds@assays@data@listData[["counts"]]
-colDataLR <- colData(dds)
-names(colDataLR)[names(colDataLR)=="Group3"]<-"tissue"
-names(colDataLR)[names(colDataLR)=="Group1"]<-"condition"
-colDataLR=colDataLR[colDataLR$tissue == "A", ] 
-```
-Assembilng Deseq datast
-```{r}
-ddsLR <- DESeqDataSetFromMatrix(countData=countLR, colData =colDataLR, design = ~condition)
-keep <- rowSums(counts(ddsLR)) >= 20
-ddsLR <- ddsLR[keep,]
-head(ddsLR)
-```
-Analysis
-```{r}
-ddsLR <- DESeq(ddsLR)
-resLR <- results(ddsLR)
-resLR <- resLR[order(resLR$padj),]
-head(resLR)
+#ls
+grep "Vcard_DToL13592" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
+grep "Vcard_DToL04829" vcard.func.annot.csv | awk -F "," '{print $1,$14,$15}'
+grep "Vcard_DToL13539" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
+grep "Vcard_DToL02600" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
+grep "Vcard_DToL10357" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
+grep "Vcard_DToL13220" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
+grep "Vcard_DToL16018" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
 ```
 
- Plotting
-```{r}
-plotMA(resLR, ylim=c(-2,2))
-vsdata <- vst(ddsLR, blind=FALSE)
-plotPCA(vsdata, intgroup="condition")
+
+```{bash}
+grep "Vcard_DToL13592" vcard.func.annot.csv 
+grep "Vcard_DToL04829" vcard.func.annot.csv 
+grep "Vcard_DToL13539" vcard.func.annot.csv 
+grep "Vcard_DToL02600" vcard.func.annot.csv 
+grep "Vcard_DToL10357" vcard.func.annot.csv 
+grep "Vcard_DToL13220" vcard.func.annot.csv 
+grep "Vcard_DToL16018" vcard.func.annot.csv 
+
 ```
+
+
+
+```{r}
+tab <- matrix(c("N/A", "N/A", "Isl-1", "Insulin gene enhancer protein, gene encodes a transcription factor containing two N-terminal LIM domains and one C-terminal homeodomain","A10/OS-D","Insect pheromone-binding family","glipr2",1,1,1,1,1,1,1), ncol=2, byrow=TRUE)
+colnames(tab) <- c('GeneName','Function')
+rownames(tab) <- c('Vcard_DToL13592',"Vcard_DToL04829","Vcard_DToL13539","Vcard_DToL02600","Vcard_DToL10357","Vcard_DToL13220","Vcard_DToL16018" )
+tab <- as.table(tab)
+
+tab
+
+```
+
+
 
