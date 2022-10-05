@@ -358,3 +358,6 @@ nextflow run nf-core/rnaseq --input sample_sheetHDLD.csv -profile uppmax -c $con
 
 nano nano  run_rnaseq_HDLD_resume2.sh
 cp run_rnaseq_HDLD_resume1.slurm run_rnaseq_HDLD_resume2.slurm
+
+#all finished
+#uploading th second set
