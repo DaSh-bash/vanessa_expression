@@ -23,13 +23,14 @@ colDataLR <- colData(dds) #reloading metadata
 names(colDataLR)[names(colDataLR)=="Group3"]<-"tissue"
 names(colDataLR)[names(colDataLR)=="Group1"]<-"condition"
 
+
 #Checking resulting tables
 head(countLR)
 head(colDataLR)
 ```
 
 Pipeline was run for the entire experimental dataset therefore needs to be split into different sets/tissues:
-
+## **Abdomen**
 ```{r}
 colDataLRab<-colDataLR[colDataLR$tissue == "A", ] #selecting abdomen samples only
 #selecting samples with abdomen tissue based on ID 
@@ -37,10 +38,9 @@ countLRab<-countLR[,c(1,2,3,4,5,10,11,12,13,14)]
 names(colDataLRab)[names(colDataLRab)=="Group3"]<-"tissue"
 names(colDataLRab)[names(colDataLRab)=="Group1"]<-"condition"
 
-head(countLR)
-head(colDataLR)
+head(countLRab)
+head(colDataLRab)
 ```
-
 
 Constructing DESeq2 object, at this point counts are transformed according to the DESeq specific algorithm.
 Current hypothsis includes split into treatment groups *only* (~condition), filtering out genes with less then 10 total counts 
@@ -57,7 +57,7 @@ head(ddsLRab)
 **DESeq analysis**
 Main valuation, calculation of p-values
 ```{r}
-#ddsLRab <- DESeq(ddsLRab) #running the main function
+ddsLRab <- DESeq(ddsLRab) #running the main function
 resLRab <- results(ddsLRab)
 resLRab <- resLRab[order(resLRab$padj),]
 head(resLRab)
@@ -91,8 +91,41 @@ Visual exploration of the results
 We us first 100 significant genes to build a PCA plot:
 ```{r}
 vsdata <- vst(ddsLRab, blind=FALSE)
+plotPCA(vsdata, intgroup=c("Group4"))
+
+head(ddsLRab)
+```
+### Group effect analysis
+Let's define new condition
+
+We create new column with family assignment
+"AL_ADF_H_11" "AL_ADF_H_3"  "AL_ADF_H_7"  "AL_ADF_H_9"  "LI_ADF_H_10" "LI_ADF_H_12" "LI_ADF_H_14" "LI_ADF_H_16" "LI_ADF_H_8"
+
+"X18" "X5"  "X4"  "X4"  "Unknown" "Unknown" "Unknown" "Unknown" "Unknown"
+
+For abdomens:
+"AL_ADF_A_11" "AL_ADF_A_19" "AL_ADF_A_3"  "AL_ADF_A_7"  "AL_ADF_A_9"  "LI_ADF_A_10" "LI_ADF_A_12" "LI_ADF_A_14" "LI_ADF_A_16" "LI_ADF_A_8"
+
+"X18" "X18" "X5" "X4" "X4" "Unknown" "Unknown" "Unknown" "Unknown" "Unknown" "Unknown"
+
+```{r}
+colDataLRab<-colDataLR[colDataLR$tissue == "A", ] #selecting abdomen samples only
+#selecting samples with abdomen tissue based on ID 
+countLRab<-countLR[,c(1,2,3,4,5,10,11,12,13,14)]
+names(colDataLRab)[names(colDataLRab)=="Group3"]<-"tissue"
+names(colDataLRab)[names(colDataLRab)=="Group1"]<-"condition"
+
+colDataLRab['family'] <- c("X18","X18","X5","X4","X4","X5","X5","U1","U2","U3")
+
+```
+
+
+```{r}
+vsdata <- vst(ddsLRab, blind=FALSE)
 plotPCA(vsdata, intgroup=c("condition"))
 ```
+
+
 
 We use function plotMA, that shows the log2 fold changes attributable to a given variable over the mean of normalized counts for all the samples in the DESeqDataSet. Points are colored blue if the adjusted p-value is less than 0.1.
 ```{r}
@@ -150,6 +183,330 @@ tab <- as.table(tab)
 tab
 
 ```
+
+#### Including group effect
+```{r}
+ddsLRabf <- DESeqDataSetFromMatrix(countData=countLRab, colData = colDataLRab, design = ~family+condition)
+keep <- rowSums(counts(ddsLRabf)) >= 10
+ddsLRabf <- ddsLRabf[keep,]
+head(ddsLRabf)
+
+ddsLRabf <- DESeq(ddsLRabf)
+resLRabf <- results(ddsLRabf)
+resLRabf <- resLRabf[order(resLRabf$padj),]
+head(resLRabf)
+summary(resLRabf)
+```
+
+```{r}
+res05abf <- results(ddsLRabf, alpha=0.05)
+summary(res05abf)
+
+
+vsdataab <- vst(ddsLRabf, blind=FALSE)
+plotPCA(vsdataab, intgroup=c("condition"))
+
+```
+
+
+```{r}
+res05abf<-na.omit(res05abf)
+res05abftopUp <- res05abf[res05abf$padj <= 0.05 & res05abf$log2FoldChange > 0, ]
+res05abftopDown <- res05abf[res05abf$padj <= 0.05 & res05abf$log2FoldChange < 0, ]
+res05abftopUp
+res05abftopDown
+
+res05abftopUpgenenames <- row.names(res05abftopUp)
+res05abftopUpgenenames
+
+res05abftopDowngenenames <- row.names(res05abftopDown)
+res05abftopDowngenenames
+```
+
+```{r}
+
+par(mfrow=c(2,3))
+for (x in res05abftopDowngenenames) {
+  plotCounts(ddsLRabf, gene=x, intgroup="condition")
+}
+
+#grep "Vcard_DToL04426" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
+
+par(mfrow=c(1,1))
+
+plotCounts(ddsLRabf, gene="Vcard_DToL01271", intgroup="condition")
+plotCounts(ddsLRabf, gene="Vcard_DToL05461", intgroup="condition")
+#plotCounts(ddsLRhef2, gene="Vcard_DToL02971", intgroup="condition")
+#plotCounts(ddsLRhef2, gene="Vcard_DToL06375", intgroup="condition")
+#plotCounts(ddsLRhef2, gene="Vcard_DToL09542", intgroup="condition")
+#plotCounts(ddsLRhef2, gene="Vcard_DToL14898", intgroup="condition")
+```
+```{bash}
+
+grep "Vcard_DToL01271" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
+grep "Vcard_DToL05461" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
+
+```
+
+```{r}
+
+par(mfrow=c(2,3))
+for (x in res05abftopUpgenenames) {
+  plotCounts(ddsLRabf, gene=x, intgroup="condition")
+}
+
+
+par(mfrow=c(1,1))
+
+plotCounts(ddsLRabf, gene="Vcard_DToL00065", intgroup="condition")
+plotCounts(ddsLRabf, gene="Vcard_DToL11904", intgroup="condition")
+#plotCounts(ddsLRhef2, gene="Vcard_DToL02971", intgroup="condition")
+#plotCounts(ddsLRhef2, gene="Vcard_DToL06375", intgroup="condition")
+#plotCounts(ddsLRhef2, gene="Vcard_DToL09542", intgroup="condition")
+#plotCounts(ddsLRhef2, gene="Vcard_DToL14898", intgroup="condition")
+```
+
+```{bash}
+
+grep "Vcard_DToL00065" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
+grep "Vcard_DToL11904" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
+
+```
+
+
+
+## **Head**
+
+```{r}
+colDataLRhe<-colDataLR[colDataLR$tissue == "H", ] #selecting abdomen samples only
+#selecting samples with abdomen tissue based on ID 
+countLRhe<-countLR[,-c(1,2,3,4,5,10,11,12,13,14)]
+names(colDataLRhe)[names(colDataLRhe)=="Group3"]<-"tissue"
+names(colDataLRhe)[names(colDataLRhe)=="Group1"]<-"condition"
+
+colDataLRhe['family'] <- c("X18","X5","X4","X4","Unknown","Unknown","Unknown","Unknown","Unknown")
+
+head(countLRhe)
+head(colDataLRhe)
+```
+
+Constructing DESeq2 object, at this point counts are transformed according to the DESeq specific algorithm.
+Current hypothsis includes split into treatment groups *only* (~condition), filtering out genes with less then 10 total counts 
+
+```{r}
+ddsLRhe <- DESeqDataSetFromMatrix(countData=countLRhe, colData =colDataLRhe, design = ~condition)
+
+#Basic filtering
+keep <- rowSums(counts(ddsLRhe)) >= 10
+ddsLRab <- ddsLRhe[keep,]
+head(ddsLRhe)
+```
+
+**DESeq analysis**
+Main valuation, calculation of p-values
+```{r}
+ddsLRhe <- DESeq(ddsLRhe) #running the main function
+resLRhe <- results(ddsLRhe)
+resLRhe <- resLRhe[order(resLRhe$padj),]
+head(resLRhe)
+summary(resLRhe)
+```
+
+Visual exploration of the results
+
+We us first 100 significant genes to build a PCA plot:
+```{r}
+vsdata <- vst(ddsLRhe, blind=FALSE)
+plotPCA(vsdata, intgroup=c("family"))
+```
+
+Redefining the families:
+```{r}
+colDataLRhe<-colDataLR[colDataLR$tissue == "H", ] #selecting abdomen samples only
+#selecting samples with abdomen tissue based on ID 
+countLRhe<-countLR[,-c(1,2,3,4,5,10,11,12,13,14)]
+names(colDataLRhe)[names(colDataLRhe)=="Group3"]<-"tissue"
+names(colDataLRhe)[names(colDataLRhe)=="Group1"]<-"condition"
+
+colDataLRhe['family'] <- c("X18","X5","X4","X4","Unknown","Unknown","Unknown","Unknown","Unknown")
+colDataLRhe['family2'] <- c("X18","X5","X4","X4","X5","X5","U1","U2","U3")
+head(countLRhe)
+head(colDataLRhe)
+
+```
+
+Redesigning the experiment:
+
+```{r}
+ddsLRhef2 <- DESeqDataSetFromMatrix(countData=countLRhe, colData = colDataLRhe, design = ~family2+condition)
+keep <- rowSums(counts(ddsLRhef2)) >= 10
+ddsLRhef2 <- ddsLRhef2[keep,]
+head(ddsLRhef2)
+
+#vsdata <- vst(ddsLRhef2, blind=FALSE)
+#plotPCA(vsdata, intgroup=c("family2"))
+```
+
+**DESeq analysis**
+Main valuation, calculation of p-values
+```{r}
+ddsLRhef2 <- DESeq(ddsLRhef2) #running the main function
+resLRhef2 <- results(ddsLRhef2)
+resLRhef2 <- resLRhef2[order(resLRhef2$padj),]
+head(resLRhef2)
+summary(resLRhef2)
+```
+
+Visual exploration of the results
+
+We use first 100 significant genes to build a PCA plot:
+```{r}
+vsdata <- vst(ddsLRhef2, blind=FALSE)
+plotPCA(vsdata, intgroup=c("condition"))
+```
+
+```{r}
+plotMA(resLRhef2, ylim=c(-10,10))
+```
+
+
+
+```{r}
+res <- resLRhef2[order(resLRhef2$padj),]
+head(res, 10)
+
+res2 <- resLRhef2[order(resLRhef2$log2FoldChange),]
+head(res2, 10)
+```
+
+```{r}
+par(mfrow=c(2,3))
+
+#Plotting these genes
+plotCounts(ddsLRab, gene="Vcard_DToL15624", intgroup="condition")
+plotCounts(ddsLRab, gene="Vcard_DToL15622", intgroup="condition")
+plotCounts(ddsLRab, gene="Vcard_DToL13698", intgroup="condition")
+plotCounts(ddsLRab, gene="Vcard_DToL15624", intgroup="condition")
+plotCounts(ddsLRab, gene="Vcard_DToL15622", intgroup="condition")
+plotCounts(ddsLRab, gene="Vcard_DToL13698", intgroup="condition")
+
+
+```
+
+```{bash}
+#ls
+grep "Vcard_DToL15624" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
+grep "Vcard_DToL15622" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
+#grep "Vcard_DToL15622" vcard.func.annot.csv
+grep "Vcard_DToL13698" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
+grep "Vcard_DToL03156" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
+#grep "Vcard_DToL10357" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
+#grep "Vcard_DToL13220" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
+#grep "Vcard_DToL16018" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
+```
+
+
+
+Setting up p-value to 0.05
+```{r}
+res05hef2 <- results(ddsLRhef2, alpha=0.05)
+summary(res05hef2)
+```
+
+
+```{r}
+plotMA(res05hef2, ylim=c(-10,10))
+```
+
+Selecting upregulated genes of interest based on arbitrary (stringent) criteria
+```{r}
+#res05hef2[order(res05hef2$padj),]
+res05hef2<-na.omit(res05hef2)
+res05hef2topUp <- res05hef2[res05hef2$padj <= 0.05 & res05hef2$log2FoldChange > 0, ]
+res05hef2topDown <- res05hef2[res05hef2$padj <= 0.05 & res05hef2$log2FoldChange < 0, ]
+res05hef2topUp
+res05hef2topDown
+
+res05hef2topUpgenenames <- row.names(res05hef2topUp)
+res05hef2topUpgenenames
+
+res05hef2topDowngenenames <- row.names(res05hef2topDown)
+res05hef2topDowngenenames
+
+```
+
+```{bash}
+grep "Vcard_DToL01495" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
+grep "Vcard_DToL03461" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
+```
+
+```{r}
+
+par(mfrow=c(2,3))
+
+
+for (x in res05hef2topUpgenenames) {
+  plotCounts(ddsLRhef2, gene=x, intgroup="condition")
+}
+
+par(mfrow=c(1,1))
+plotCounts(ddsLRhef2, gene="Vcard_DToL01495", intgroup="condition")
+plotCounts(ddsLRhef2, gene="Vcard_DToL03461", intgroup="condition")
+
+
+```
+
+
+
+Plotting genes of interest:
+```{r}
+par(mfrow=c(2,3))
+
+
+for (x in res05hef2topUpgenenames) {
+  plotCounts(ddsLRhef2, gene=x, intgroup="condition")
+}
+
+par(mfrow=c(1,1))
+plotCounts(ddsLRhef2, gene="Vcard_DToL01495", intgroup="condition")
+plotCounts(ddsLRhef2, gene="Vcard_DToL03461", intgroup="condition")
+
+```
+```{r}
+par(mfrow=c(2,3))
+
+
+for (x in res05hef2topDowngenenames) {
+  plotCounts(ddsLRhef2, gene=x, intgroup="condition")
+}
+
+#grep "Vcard_DToL04426" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
+
+par(mfrow=c(1,1))
+
+plotCounts(ddsLRhef2, gene="Vcard_DToL04426", intgroup="condition")
+plotCounts(ddsLRhef2, gene="Vcard_DToL02425", intgroup="condition")
+plotCounts(ddsLRhef2, gene="Vcard_DToL02971", intgroup="condition")
+plotCounts(ddsLRhef2, gene="Vcard_DToL06375", intgroup="condition")
+plotCounts(ddsLRhef2, gene="Vcard_DToL09542", intgroup="condition")
+plotCounts(ddsLRhef2, gene="Vcard_DToL14898", intgroup="condition")
+
+
+
+```
+
+```{bash}
+grep "Vcard_DToL04426" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
+grep "Vcard_DToL02425" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
+grep "Vcard_DToL02971" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
+grep "Vcard_DToL06375" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
+grep "Vcard_DToL09542" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
+grep "Vcard_DToL09542" vcard.func.annot.csv
+grep "Vcard_DToL14898" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
+grep "Vcard_DToL14898" vcard.func.annot.csv
+```
+
+
 
 
 
