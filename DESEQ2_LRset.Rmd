@@ -2,6 +2,13 @@
 title: "*Vanessa cardui* DE"
 output: html_notebook
 ---
+```{r}
+library(topGO)
+library(ggplot2)
+library(DESeq2)
+library(apeglm)
+```
+
 
 # Differntial expression in *Vanessa cardui* adults
 Experimental set up was prepared with adult females in two food availability conditions: ad libitum and no resources, to analyze the influence that environmental conditions may have on investment in migration or reproduction in imagines
@@ -10,8 +17,8 @@ Experimental set up was prepared with adult females in two food availability con
 In this section we analyse differential expression in the abdomen tissue
 
 
+**Preparing data**  
 
-**Preparing data**
 We upload count data from the DESeq2 object crated within the nf-core rnasq pipeline. Pipeline was run for the entire experimental dataset therefore needs to be split into different sets/tissues:
 
 ```{r}
@@ -30,7 +37,7 @@ head(colDataLR)
 ```
 
 Pipeline was run for the entire experimental dataset therefore needs to be split into different sets/tissues:
-## **Abdomen**
+#### Selecting data for abdomen
 ```{r}
 colDataLRab<-colDataLR[colDataLR$tissue == "A", ] #selecting abdomen samples only
 #selecting samples with abdomen tissue based on ID 
@@ -52,7 +59,6 @@ keep <- rowSums(counts(ddsLRab)) >= 10
 ddsLRab <- ddsLRab[keep,]
 head(ddsLRab)
 ```
-
 
 **DESeq analysis**
 Main valuation, calculation of p-values
@@ -80,7 +86,7 @@ We provide the dds object and the name or number of the coefficient we want to s
 
 
 ```{r}
-head(resultsNames(ddsLRab))
+#head(resultsNames(ddsLRab))
 resLFC <- lfcShrink(ddsLRab, coef="condition_LI_vs_AL", type="apeglm")
 resLFC
 ```
@@ -95,17 +101,15 @@ plotPCA(vsdata, intgroup=c("Group4"))
 
 head(ddsLRab)
 ```
-### Group effect analysis
+#### Including group effect into analysis
 Let's define new condition
 
-We create new column with family assignment
+We create new column with family assignment for head:
 "AL_ADF_H_11" "AL_ADF_H_3"  "AL_ADF_H_7"  "AL_ADF_H_9"  "LI_ADF_H_10" "LI_ADF_H_12" "LI_ADF_H_14" "LI_ADF_H_16" "LI_ADF_H_8"
-
 "X18" "X5"  "X4"  "X4"  "Unknown" "Unknown" "Unknown" "Unknown" "Unknown"
 
 For abdomens:
 "AL_ADF_A_11" "AL_ADF_A_19" "AL_ADF_A_3"  "AL_ADF_A_7"  "AL_ADF_A_9"  "LI_ADF_A_10" "LI_ADF_A_12" "LI_ADF_A_14" "LI_ADF_A_16" "LI_ADF_A_8"
-
 "X18" "X18" "X5" "X4" "X4" "Unknown" "Unknown" "Unknown" "Unknown" "Unknown" "Unknown"
 
 ```{r}
@@ -116,7 +120,6 @@ names(colDataLRab)[names(colDataLRab)=="Group3"]<-"tissue"
 names(colDataLRab)[names(colDataLRab)=="Group1"]<-"condition"
 
 colDataLRab['family'] <- c("X18","X18","X5","X4","X4","X5","X5","U1","U2","U3")
-
 ```
 
 
@@ -184,7 +187,7 @@ tab
 
 ```
 
-#### Including group effect
+ Including group effect
 ```{r}
 ddsLRabf <- DESeqDataSetFromMatrix(countData=countLRab, colData = colDataLRab, design = ~family+condition)
 keep <- rowSums(counts(ddsLRabf)) >= 10
@@ -197,16 +200,31 @@ resLRabf <- resLRabf[order(resLRabf$padj),]
 head(resLRabf)
 summary(resLRabf)
 ```
-
+Filtering for lower p-values
 ```{r}
 res05abf <- results(ddsLRabf, alpha=0.05)
 summary(res05abf)
 
 
-vsdataab <- vst(ddsLRabf, blind=FALSE)
-plotPCA(vsdataab, intgroup=c("condition"))
+#vsdataab <- vst(ddsLRabf, blind=FALSE)
+#plotPCA(vsdataab, intgroup=c("condition"))
 
 ```
+
+#### Results
+
+Visualize results in 
+```{r}
+#resLFC <- lfcShrink(ddsLRab, coef="condition_LI_vs_AL", type="ashr")
+resLFCa <- lfcShrink(ddsLRab, coef="condition_LI_vs_AL", type="apeglm")
+#resLFC
+
+#plotMA(resLFC, ylim=c(-3,3))
+plotMA(resLFCa, ylim=c(-4,4))
+#plotMA(res05abf)#, ylim=c(-2,2))
+```
+
+
 
 
 ```{r}
@@ -227,12 +245,12 @@ res05abftopDowngenenames
 
 par(mfrow=c(2,3))
 for (x in res05abftopDowngenenames) {
-  plotCounts(ddsLRabf, gene=x, intgroup="condition")
+  #plotCounts(ddsLRabf, gene=x, intgroup="condition")
 }
 
 #grep "Vcard_DToL04426" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
 
-par(mfrow=c(1,1))
+par(mfrow=c(1,2))
 
 plotCounts(ddsLRabf, gene="Vcard_DToL01271", intgroup="condition")
 plotCounts(ddsLRabf, gene="Vcard_DToL05461", intgroup="condition")
@@ -241,10 +259,23 @@ plotCounts(ddsLRabf, gene="Vcard_DToL05461", intgroup="condition")
 #plotCounts(ddsLRhef2, gene="Vcard_DToL09542", intgroup="condition")
 #plotCounts(ddsLRhef2, gene="Vcard_DToL14898", intgroup="condition")
 ```
-```{bash}
+```{r}
+res05abftopDowngenenames
+y<-res05abftopDowngenenames
+write.csv(y,file="abftopDowngenenames.tsv",row.names=F)
+```
 
-grep "Vcard_DToL01271" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
-grep "Vcard_DToL05461" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
+
+```{bash}
+tail -n +2 abftopDowngenenames.tsv | sed 's/\"//' | sed 's/\"//' | awk '{print $1"-RA"}' > LRabftopALligenenames.tsv
+grep -f LRabftopALligenenames.tsv vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}' | sort
+
+
+#grep -f LRabftopALligenenames.tsv vcard.func.annot.csv 
+
+#grep "Vcard_DToL01271" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
+#grep "Vcard_DToL05461" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
+#grep "Vcard_DToL05461" vcard.func.annot.csv
 
 ```
 
@@ -266,17 +297,40 @@ plotCounts(ddsLRabf, gene="Vcard_DToL11904", intgroup="condition")
 #plotCounts(ddsLRhef2, gene="Vcard_DToL14898", intgroup="condition")
 ```
 
+
+```{r}
+res05abftopUpgenenames
+y<-res05abftopUpgenenames
+write.csv(y,file="abftopUpgenenames.tsv",row.names=F)
+```
+
+
 ```{bash}
 
-grep "Vcard_DToL00065" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
-grep "Vcard_DToL11904" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
+tail -n +2 abftopUpgenenames.tsv | sed 's/\"//' | sed 's/\"//' | awk '{print $1"-RA"}' > LRabfto.tsv
+#grep -f LRabftopalLIgenenames.tsv vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}' | sort
 
+```
+
+```{bash}
+#grep 'Vcard_DToL00065-RA' vcard.func.annot.csv
+#grep 'Vcard_DToL01847-RA' vcard.func.annot.csv | awk -F "," '{print $1,$15,$16,$17,$28}' | sort
+#grep 'Vcard_DToL04177-RA' vcard.func.annot.csv
+#Vcard_DToL05345-RA
+#grep 'Vcard_DToL05345-RA' vcard.func.annot.csv  
+#| awk -F "," '{print $1,$13}' 
+#grep 'Vcard_DToL05597-RA' vcard.func.annot.csv | awk -F "," '{print $1,$15,$16,$17,$28,$108}' 
+#Vcard_DToL07626-RA
+#grep 'Vcard_DToL07626-RA' vcard.func.annot.csv | awk -F "," '{print $1,$15,$16,$17,$28,$108}'
+#Vcard_DToL08808-RA
+grep 'Vcard_DToL08808-RA' vcard.func.annot.csv | awk -F "," '{print $1,$15,$16,$17,$28,$108}'
 ```
 
 
 
-## **Head**
+## Head
 
+### Data set up
 ```{r}
 colDataLRhe<-colDataLR[colDataLR$tissue == "H", ] #selecting abdomen samples only
 #selecting samples with abdomen tissue based on ID 
@@ -332,7 +386,6 @@ colDataLRhe['family'] <- c("X18","X5","X4","X4","Unknown","Unknown","Unknown","U
 colDataLRhe['family2'] <- c("X18","X5","X4","X4","X5","X5","U1","U2","U3")
 head(countLRhe)
 head(colDataLRhe)
-
 ```
 
 Redesigning the experiment:
@@ -364,6 +417,8 @@ We use first 100 significant genes to build a PCA plot:
 vsdata <- vst(ddsLRhef2, blind=FALSE)
 plotPCA(vsdata, intgroup=c("condition"))
 ```
+
+### Exploring results
 
 ```{r}
 plotMA(resLRhef2, ylim=c(-10,10))
@@ -415,8 +470,15 @@ summary(res05hef2)
 
 
 ```{r}
-plotMA(res05hef2, ylim=c(-10,10))
+#resLFC <- lfcShrink(ddsLRab, coef="condition_LI_vs_AL", type="ashr")
+#resLFCh <- lfcShrink(ddsLRhef2, coef="condition_LI_vs_AL", type="apeglm")
+#resLFC
+
+#plotMA(resLFC, ylim=c(-3,3))
+plotMA(resLFCh, ylim=c(-4,4))
+#plotMA(res05abf)#, ylim=c(-2,2))
 ```
+
 
 Selecting upregulated genes of interest based on arbitrary (stringent) criteria
 ```{r}
@@ -463,26 +525,40 @@ Plotting genes of interest:
 par(mfrow=c(2,3))
 
 
-for (x in res05hef2topUpgenenames) {
-  plotCounts(ddsLRhef2, gene=x, intgroup="condition")
-}
+#for (x in res05hef2topUpgenenames) {
+#  plotCounts(ddsLRhef2, gene=x, intgroup="condition")
+#}
 
-par(mfrow=c(1,1))
+par(mfrow=c(1,2))
 plotCounts(ddsLRhef2, gene="Vcard_DToL01495", intgroup="condition")
 plotCounts(ddsLRhef2, gene="Vcard_DToL03461", intgroup="condition")
 
 ```
+
+```{r}
+z<-res05hef2topDowngenenames
+write.csv(z,file="hef2topDowngenenames.tsv",row.names=F)
+```
+
+```{bash}
+tail -n +2 hef2topDowngenenames.tsv | sed 's/\"//' | sed 's/\"//' | awk '{print $1"-RA"}' > LRhef2topALligenenames.tsv
+grep -f LRhef2topALligenenames.tsv vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}' | sort
+```
+
+
+
+
+
 ```{r}
 par(mfrow=c(2,3))
 
-
-for (x in res05hef2topDowngenenames) {
-  plotCounts(ddsLRhef2, gene=x, intgroup="condition")
-}
+#for (x in res05hef2topDowngenenames) {
+#  plotCounts(ddsLRhef2, gene=x, intgroup="condition")
+#}
 
 #grep "Vcard_DToL04426" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
 
-par(mfrow=c(1,1))
+par(mfrow=c(2,3))
 
 plotCounts(ddsLRhef2, gene="Vcard_DToL04426", intgroup="condition")
 plotCounts(ddsLRhef2, gene="Vcard_DToL02425", intgroup="condition")
@@ -490,7 +566,6 @@ plotCounts(ddsLRhef2, gene="Vcard_DToL02971", intgroup="condition")
 plotCounts(ddsLRhef2, gene="Vcard_DToL06375", intgroup="condition")
 plotCounts(ddsLRhef2, gene="Vcard_DToL09542", intgroup="condition")
 plotCounts(ddsLRhef2, gene="Vcard_DToL14898", intgroup="condition")
-
 
 
 ```
@@ -501,12 +576,258 @@ grep "Vcard_DToL02425" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
 grep "Vcard_DToL02971" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
 grep "Vcard_DToL06375" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
 grep "Vcard_DToL09542" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
-grep "Vcard_DToL09542" vcard.func.annot.csv
+#grep "Vcard_DToL09542" vcard.func.annot.csv
 grep "Vcard_DToL14898" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
-grep "Vcard_DToL14898" vcard.func.annot.csv
+```
+
+```{r}
+z<-res05abftopUpgenenames
+write.csv(z,file="abtopUpgenenames.tsv",row.names=F)
+
+z<-res05abftopDowngenenames
+write.csv(z,file="abtopDowngenenames.tsv",row.names=F)
+
+z<-res05hef2topUpgenenames
+write.csv(z,file="hetopUpgenenames.tsv",row.names=F)
+
+z<-res05hef2topDowngenenames
+write.csv(z,file="hetopDowngenenames.tsv",row.names=F)
+```
+
+
+```{bash}
+tail -n +2 abtopUpgenenames.tsv | sed 's/\"//' | sed 's/\"//' | awk '{print $1"-RA"}' > LRabtopUpgenenames.tsv
+tail -n +2 abtopDowngenenames.tsv | sed 's/\"//' | sed 's/\"//' | awk '{print $1"-RA"}' > LRabtopDowngenenames.tsv
+tail -n +2 hetopUpgenenames.tsv | sed 's/\"//' | sed 's/\"//' | awk '{print $1"-RA"}' > LRhetopUpgenenames.tsv
+tail -n +2 hetopDowngenenames.tsv | sed 's/\"//' | sed 's/\"//' | awk '{print $1"-RA"}' > LRhetopDowngenenames.tsv
+#grep -f LRhef2topalLIgenenames.tsv vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}' | sort
 ```
 
 
 
 
+
+
+## Testing overlaps between gene sets 
+
+
+
+```{bash}
+#hef2ALligenenames.tsv
+#LRabftopALligenenames.tsv
+#LRhef2genenames.tsv
+#LRhef2topalLIgenenames.tsv
+
+echo "Downregulated in heads and abdomens with limited resource"
+comm -12 LRhetopDowngenenames.tsv LRabtopDowngenenames.tsv
+
+echo "Upregulated in heads and abdomens with limited resource"
+comm -12 LRhetopUpgenenames.tsv LRabtopUpgenenames.tsv
+
+echo "Downregulated in heads, upregulated in abdomens with limited resource"
+comm -12 LRhetopDowngenenames.tsv LRabtopUpgenenames.tsv
+
+echo "Upregulated in heads, downregulated in abdomens with limited resource"
+comm -12 LRhetopUpgenenames.tsv LRabtopDowngenenames.tsv
+
+```
+
+```{bash}
+awk '{print $1}' CandidateGenesExpandedOrthogroups.txt > CandidateGenesExpandedOrthogroups.tsv
+
+echo "Downregulated in heads limited resource"
+comm -12 LRhetopDowngenenames.tsv CandidateGenesExpandedOrthogroups.tsv
+
+echo "Upregulated in heads limited resource"
+comm -12 LRhetopUpgenenames.tsv CandidateGenesExpandedOrthogroups.tsv
+
+echo "Downregulated in abdomens limited resource"
+comm -12 LRabtopDowngenenames.tsv CandidateGenesExpandedOrthogroups.tsv
+
+echo "Upregulated in abdomens limited resource"
+comm -12 LRabtopUpgenenames.tsv CandidateGenesExpandedOrthogroups.tsv
+```
+
+
+
+## TopGO analysis
+
+```{r}
+library(topGO)
+library(ggplot2)
+```
+
+Creating topGO object
+```{r}
+#create an object with all gene identifiers and corresponding GO-terms
+#readMappings(file, sep = "\t", IDsep = ",")
+geneID2GO <- readMappings(file="Vanessa_TopGo_reference_base_filtered.tsv", sep = "\t", IDsep = ",")
+str(head(geneID2GO))
+
+#gene universe, vector of gene names
+geneNames <- names(geneID2GO)
+head(geneNames)
+
+#read the list of genes of interest res05hef2topDowngenenames
+x<-res05hef2topDowngenenames
+write.csv(x,file="x.tsv",row.names=F)
+```
+
+Prepping file with all genes of interest
+
+```{r}
+#read the list of genes of interest res05hef2topDowngenenames
+y<-res05hef2topDowngenenames
+write.csv(y,file="hef2topDowngenenames.tsv",row.names=F)
+
+x<-res05hef2topUpgenenames
+write.csv(x,file="hef2topUpgenenames.tsv",row.names=F)
+```
+
+
+```{bash}
+tail -n +2 hef2topDowngenenames.tsv > hef2topDowngenename.tsv
+tail -n +2 hef2topUpgenenames.tsv > hef2topUpgenename.tsv
+
+cat hef2topDowngenename.tsv hef2topUpgenename.tsv > LRhefgenename.tsv
+
+tail -n +2 LRhefgenename.tsv | sed 's/\"//' | sed 's/\"//' | awk '{print $1"-RA"}' > LRhef2genenames.tsv
+```
+
+
+
+```{r}
+#read the list of genes of interest 
+#"when only a list of interesting genes is provided, 
+#the user can use only tests statistics that are based on gene counts, 
+#like Fisher’s exact test, Z score and alike."
+##Algorithms:
+#classic uses all GO terms separately
+#elim eliminates genes from parentGOterms if child is more specific (bottom up analysis)
+#weight trying to determin if GOterm is better representing the list of interesting genes (is more enriched) than any other node from its neighborhood
+#parentChild 
+
+Dasha_topGO <- function(gene_list){
+
+candidate_genes <- read.table(gene_list, header = F)
+colnames(candidate_genes) <- "geneid"
+#head(candidate_genes)
+
+candidate_genes <- as.character(candidate_genes$geneid)
+geneList <- factor(as.integer(geneNames %in% candidate_genes))
+names(geneList) <- geneNames
+#head(geneList)
+
+##Biological function
+#create the topGOdata object
+GO_data_BP <- new("topGOdata", 
+               ontology="BP", 
+               allGenes=geneList, 
+               annot=annFUN.gene2GO, 
+               gene2GO=geneID2GO, 
+               nodeSize=1)
+
+BP_resultFisher_weight01 <- runTest(GO_data_BP, algorithm = "weight01", statistic = "fisher")
+
+allGO = usedGO(object = GO_data_BP)
+allRes_BP <- GenTable(GO_data_BP, 
+                   weight01Fisher = BP_resultFisher_weight01,
+                   orderBy = "weight01Fisher", 
+                   ranksOf = "weight01Fisher", 
+                   topNodes = length(allGO),
+                   numChar=1000)
+
+#multiple test correction, method Benjamini-Hochberg
+allRes_BP$p_adj <- p.adjust(allRes_BP$weight01Fisher, method = "fdr")
+allRes_BP$GO_class <- "BP"
+
+###Molecular function
+#create the topGOdata object
+GO_data_MF <- new("topGOdata", 
+               ontology="MF", 
+               allGenes=geneList, 
+               annot=annFUN.gene2GO, 
+               gene2GO=geneID2GO, 
+               nodeSize=1)
+
+MF_resultFisher_weight01 <- runTest(GO_data_MF, algorithm = "weight01", statistic = "fisher")
+
+allGO = usedGO(object = GO_data_MF)
+allRes_MF <- GenTable(GO_data_MF, 
+                   weight01Fisher = MF_resultFisher_weight01,
+                   orderBy = "weight01Fisher", 
+                   ranksOf = "weight01Fisher", 
+                   topNodes = length(allGO),
+                   numChar=1000)
+
+allRes_MF$weight01Fisher <- as.numeric(allRes_MF$weight01Fisher)
+#multiple test correction, method Benjamini-Hochberg
+allRes_MF$p_adj <- p.adjust(allRes_MF$weight01Fisher, method = "fdr")
+allRes_MF$GO_class <- "MF"
+
+###Cellular compartment
+#create the topGOdata object
+GO_data_CC <- new("topGOdata", 
+               ontology="CC", 
+               allGenes=geneList, 
+               annot=annFUN.gene2GO, 
+               gene2GO=geneID2GO, 
+               nodeSize=1)
+
+CC_resultFisher_weight01 <- runTest(GO_data_CC, algorithm = "weight01", statistic = "fisher")
+
+allGO = usedGO(object = GO_data_CC)
+allRes_CC <- GenTable(GO_data_CC, 
+                   weight01Fisher = CC_resultFisher_weight01,
+                   orderBy = "weight01Fisher", 
+                   ranksOf = "weight01Fisher", 
+                   topNodes = length(allGO),
+                   numChar=1000)
+
+allRes_CC$weight01Fisher <- as.numeric(allRes_CC$weight01Fisher)
+#multiple test correction, method Benjamini-Hochberg
+allRes_CC$p_adj <- p.adjust(allRes_CC$weight01Fisher, method = "fdr")
+allRes_CC$GO_class <- "CC"
+
+#assembling all the data
+allRes_all_comb <- rbind(allRes_BP[allRes_BP$weight01Fisher<=0.05, ], allRes_CC[allRes_CC$weight01Fisher<=0.05, ], allRes_MF[allRes_MF$weight01Fisher<=0.05, ])
+
+return(allRes_all_comb)
+
+}
+```
+
+
+```{r}
+allRes_all_comb<-Dasha_topGO("LRhef2genenames.tsv")
+```
+
+
+```{r}
+allRes_all_comb <- rbind(allRes_BP[allRes_BP$weight01Fisher<=0.05, ], allRes_CC[allRes_CC$weight01Fisher<=0.05, ], allRes_MF[allRes_MF$weight01Fisher<=0.05, ])
+
+allRes_all_comb$GO_descr <- paste(allRes_all_comb$Term," (",allRes_all_comb$GO.ID,")", sep = "")
+
+#plot go-terma and number of significant genes
+plot_topGo=ggplot(allRes_all_comb, aes(reorder(GO_descr, -Significant), Significant)) +
+    geom_bar(stat = "identity", aes(fill=GO_class)) +
+  facet_grid(~GO_class, scales = "free_x", space = "free_x") +
+  ylab("Number of genes (p-value < 0.01)") +
+  scale_fill_discrete(guide = guide_legend(label.position = "top")) +
+  theme(panel.background = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_blank(),
+        axis.line = element_line(size = 0.2, colour = "grey"),
+        axis.text.x = element_text(size = 5, angle = 90, vjust = 0.5, hjust = 1),
+        axis.text.y = element_text(size = 5, angle = 90, hjust = 0.5),
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 5, angle = 90),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 5, angle = 90, vjust = 0.5),
+        legend.position = "top"
+        )
+
+ggsave(plot = plot_topGo, "V_cardui_LR.pdf")
+plot_topGo
+```
 
