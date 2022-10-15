@@ -3,148 +3,676 @@ title: "*Vanessa cardui* DE"
 output: html_notebook
 ---
 
-# Differntial expression in *Vanessa cardui* adults
+# Differntial expression in *Vanessa cardui* life stages
 Experimental set up was prepared with adult females in two food availability conditions: ad libitum and no resources plus low and high density, to analyze the influence that environmental conditions may have on investment in migration or reproduction in imagines
 
 
-**Preparing data**
+### Preparing data
 We upload count data from the DESeq2 object crated within the nf-core rnasq pipeline. Pipeline was run for the entire experimental dataset therefore needs to be split into different sets/tissues:
 
 ```{r}
-load("/Users/dshipilina/GitHub/VanessaExpression/deseq2_qc/deseq2.dds.RData") #loading file
-countLR<- dds@assays@data@listData[["counts"]] #reloading count data
-colDataLR <- colData(dds) #reloading metadata 
+load("/Users/dshipilina/GitHub/VanessaExpression/HD_LD_DESeq/deseq2.dds.RData") #loading file
+countHDLD<- dds@assays@data@listData[["counts"]] #reloading count data
+colDataHDLD <- colData(dds) #reloading metadata 
 
 #Renaming columns for clarity
-names(colDataLR)[names(colDataLR)=="Group3"]<-"tissue"
-names(colDataLR)[names(colDataLR)=="Group1"]<-"condition"
+names(colDataHDLD)[names(colDataHDLD)=="Group4"]<-"family"
+names(colDataHDLD)[names(colDataHDLD)=="Group3"]<-"tissue"
+names(colDataHDLD)[names(colDataHDLD)=="Group2"]<-"stage"
+names(colDataHDLD)[names(colDataHDLD)=="Group1"]<-"condition"
 
 #Checking resulting tables
-head(countLR)
-head(colDataLR)
+#head(countLR)
+head(colDataHDLD)
+
+cat("colDataLR       ")
+dim(colDataHDLD)
 ```
 
-Pipeline was run for the entire experimental dataset therefore needs to be split into different sets/tissues:
+Preparing functional annotation:
+```{r}
+fun_ann <- read.csv(file ="/Users/dshipilina/GitHub/VanessaExpression/vcard.func.annot.csv",header = FALSE)
+names(fun_ann)[names(fun_ann)=="V1"]<-"GeneID"
+names(fun_ann)[names(fun_ann)=="V8"]<-"Function"
+names(fun_ann)[names(fun_ann)=="V9"]<-"GeneName"
+names(fun_ann)[names(fun_ann)=="V21"]<-"Func_Categ"
+fun_ann$GeneID<-gsub("-RA","",as.character(fun_ann$GeneID))
+functional_annotation<-fun_ann[,c("GeneID","Function","GeneName","Func_Categ")]
+
+#functional_annotation[is.element(functional_annotation$GeneID,c(special_genes)),]
+
+```
+
+
+#### Contrast 1: HDALvsLDAL, Pupa, Heads, Sexes as factor, Family as Factor
+
 
 ```{r}
-colDataLRab<-colDataLR[colDataLR$tissue == "A", ] #selecting abdomen samples only
+colDataE1<-colDataHDLD[colDataHDLD$tissue == "H", ] #selecting head samples only
 #selecting samples with abdomen tissue based on ID 
-countLRab<-countLR[,c(1,2,3,4,5,10,11,12,13,14)]
-names(colDataLRab)[names(colDataLRab)=="Group3"]<-"tissue"
-names(colDataLRab)[names(colDataLRab)=="Group1"]<-"condition"
+#countLRab<-countLR[,c(1,2,3,4,5,10,11,12,13,14)]
+#names(colDataLRab)[names(colDataLRab)=="Group3"]<-"tissue"
+#names(colDataLRab)[names(colDataLRab)=="Group1"]<-"condition"
 
-head(countLR)
-head(colDataLR)
+#head(countLR)
+
+colDataE1<-colDataHDLD[(colDataHDLD$stage == "PM" | colDataHDLD$stage == "PF" | colDataHDLD$stage == "PMA"),] #selecting pupa samples only
+#head(colDataE1)
+colDataE1<-colDataE1[colDataE1$tissue == "H", ] #selecting head samples only
+#head(colDataE1)
+
+
+##Adding sex information
+colDataE1$sex <- colDataE1$stage
+colDataE1$sex<-gsub("P","",as.character(colDataE1$sex))
+colDataE1$sex<-gsub("A","",as.character(colDataE1$sex))
+colDataE1$stage<-gsub("F","",as.character(colDataE1$stage))
+colDataE1$stage<-gsub("MA","",as.character(colDataE1$stage))
+colDataE1$stage<-gsub("M","",as.character(colDataE1$stage))
+
+##Selecting count data
+sample_names<-colDataE1$sample
+countE1<-countHDLD[,c(sample_names)]
+
+head(colDataE1)
+head(countE1)
+
 ```
 
 
-Constructing DESeq2 object, at this point counts are transformed according to the DESeq specific algorithm.
-Current hypothsis includes split into treatment groups *only* (~condition), filtering out genes with less then 10 total counts 
+Constructing DESeq2 object, at this point counts are transformed according to the DESeq-specific algorithm.
+Current hypothesis includes split into treatment groups, filtering out genes with less then 10 total counts 
 ```{r}
-ddsLRab <- DESeqDataSetFromMatrix(countData=countLRab, colData =colDataLRab, design = ~condition)
+ddsE1 <- DESeqDataSetFromMatrix(countData=countE1, colData =colDataE1, design = ~family + sex + condition)
 
 #Basic filtering
-keep <- rowSums(counts(ddsLRab)) >= 10
-ddsLRab <- ddsLRab[keep,]
-head(ddsLRab)
+keep <- rowSums(counts(ddsE1)) >= 10
+ddsE1 <- ddsE1[keep,]
+head(ddsE1)
 ```
-
 
 **DESeq analysis**
 Main valuation, calculation of p-values
-```{r}
-#ddsLRab <- DESeq(ddsLRab) #running the main function
-resLRab <- results(ddsLRab)
-resLRab <- resLRab[order(resLRab$padj),]
-head(resLRab)
-summary(resLRab)
-```
 
-Setting up p-value to 0.05
 ```{r}
-res05 <- results(ddsLRab, alpha=0.05)
-summary(res05)
+ddsE1 <- DESeq(ddsE1) #running the main function
 ```
 
 
-
-Log fold change shrinkage is recommended for visualization and ranking, her we follow main DESEq2 vignette exactly
-
-"Shrinkage of effect size (LFC estimates) is useful for visualization and ranking of genes. To shrink the LFC, we pass the dds object to the function lfcShrink. Below we specify to use the apeglm method for effect size shrinkage (Zhu, Ibrahim, and Love 2018), which improves on the previous estimator.
-
-We provide the dds object and the name or number of the coefficient we want to shrink, where the number refers to the order of the coefficient as it appears in resultsNames(dds)."
-
-
 ```{r}
-head(resultsNames(ddsLRab))
-resLFC <- lfcShrink(ddsLRab, coef="condition_LI_vs_AL", type="apeglm")
-resLFC
-```
-
-
-Visual exploration of the results
-
-We us first 100 significant genes to build a PCA plot:
-```{r}
-vsdata <- vst(ddsLRab, blind=FALSE)
+#Global summary
+vsdata <- vst(ddsE1, blind=FALSE)
 plotPCA(vsdata, intgroup=c("condition"))
+plotPCA(vsdata, intgroup=c("family"))
+plotPCA(vsdata, intgroup=c("sex"))
+
 ```
 
-We use function plotMA, that shows the log2 fold changes attributable to a given variable over the mean of normalized counts for all the samples in the DESeqDataSet. Points are colored blue if the adjusted p-value is less than 0.1.
+
+
+
 ```{r}
-plotMA(resLRab, ylim=c(-5,5))
+#Summary of results function
+#Setting up p-value to 0.05
+resE105 <- results(ddsE1, alpha=0.05)
+summary(resE105)
+resE105 <- resE105[order(resE105$padj),]
+head(resE105)
+
+#Different shrinkage
+#resE1LFC <- lfcShrink(ddsE1, coef="condition_LDAL_vs_HDAL", type="normal")
+#resE1LFCa <- lfcShrink(ddsE1, coef="condition_LDAL_vs_HDAL", type="apeglm")
+#resLFC
+
+plotMA(resE1, ylim=c(-20,20))
+plotMA(resE1LFC, ylim=c(-3,3))
+plotMA(resE1LFCa, ylim=c(-2,2))
+#plotMA(res05abf)#, ylim=c(-2,2))
 ```
+
+
+```{r}
+# Make a basic volcano plot
+with(resE105, plot(log2FoldChange, -log10(pvalue), pch=20, main="condition_LDAL_vs_HDAL_pupa_head", xlim=c(-4,4),ylim=c(0,6)))
+
+# Add colored points: blue if padj<0.05, red if log2FC>1 and padj<0.05)
+with(subset(resE105, padj<.05 ), points(log2FoldChange, -log10(pvalue), pch=20, col="blue"))
+with(subset(resE105, padj<.05 & abs(log2FoldChange)>2), points(log2FoldChange, -log10(pvalue), pch=20, col="red"))
+```
+
+
 
 Checking significant gene candidates:
-```{r}
-res <- resLRab[order(resLRab$padj),]
-head(res, 10)
-
-#Plotting these genes
-plotCounts(ddsLRab, gene="Vcard_DToL13592", intgroup="condition")
-plotCounts(ddsLRab, gene="Vcard_DToL04829", intgroup="condition")
-plotCounts(ddsLRab, gene="Vcard_DToL13539", intgroup="condition")
-plotCounts(ddsLRab, gene="Vcard_DToL02600", intgroup="condition")
-plotCounts(ddsLRab, gene="Vcard_DToL10357", intgroup="condition")
-plotCounts(ddsLRab, gene="Vcard_DToL13220", intgroup="condition")
-plotCounts(ddsLRab, gene="Vcard_DToL16018", intgroup="condition")
-```
-
-Checking functions of the differentialy expressed genes
-
-```{bash}
-#ls
-grep "Vcard_DToL13592" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
-grep "Vcard_DToL04829" vcard.func.annot.csv | awk -F "," '{print $1,$14,$15}'
-grep "Vcard_DToL13539" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
-grep "Vcard_DToL02600" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
-grep "Vcard_DToL10357" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
-grep "Vcard_DToL13220" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
-grep "Vcard_DToL16018" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
-```
-
-
-```{bash}
-grep "Vcard_DToL13592" vcard.func.annot.csv 
-grep "Vcard_DToL04829" vcard.func.annot.csv 
-grep "Vcard_DToL13539" vcard.func.annot.csv 
-grep "Vcard_DToL02600" vcard.func.annot.csv 
-grep "Vcard_DToL10357" vcard.func.annot.csv 
-grep "Vcard_DToL13220" vcard.func.annot.csv 
-grep "Vcard_DToL16018" vcard.func.annot.csv 
-
-```
-
-
 
 ```{r}
-tab <- matrix(c("N/A", "N/A", "Isl-1", "Insulin gene enhancer protein, gene encodes a transcription factor containing two N-terminal LIM domains and one C-terminal homeodomain","A10/OS-D","Insect pheromone-binding family","glipr2",1,1,1,1,1,1,1), ncol=2, byrow=TRUE)
-colnames(tab) <- c('GeneName','Function')
-rownames(tab) <- c('Vcard_DToL13592',"Vcard_DToL04829","Vcard_DToL13539","Vcard_DToL02600","Vcard_DToL10357","Vcard_DToL13220","Vcard_DToL16018" )
-tab <- as.table(tab)
+resE105<-na.omit(resE105)
+resE105topUp <- resE105[resE105$padj <= 0.05 & resE105$log2FoldChange > 0, ]
+resE105topDown <- resE105[resE105$padj <= 0.05 & resE105$log2FoldChange < 0, ]
+head(resE105topUp,nrow(resE105topUp))
+head(resE105topDown,nrow(resE105topDown))
 
-tab
 
+par(mfrow=c(1,2))
+for (x in row.names(resE105topUp)) {
+  plotCounts(ddsE1, gene=x, intgroup="condition")
+}
+
+par(mfrow=c(1,2))
+for (x in row.names(resE105topDown)) {
+  plotCounts(ddsE1, gene=x, intgroup="condition")
+}
+
+par(mfrow=c(1,2))
+for (x in row.names(resE105topUp)) {
+  plotCounts(ddsE1, gene=x, intgroup="sex")
+}
+
+par(mfrow=c(1,2))
+for (x in row.names(resE105topDown)) {
+  plotCounts(ddsE1, gene=x, intgroup="sex")
+}
+
+par(mfrow=c(1,2))
+for (x in row.names(resE105topDown)) {
+  plotCounts(ddsE1, gene=x, intgroup="family")
+}
+
+par(mfrow=c(1,2))
+for (x in row.names(resE105topUp)) {
+  plotCounts(ddsE1, gene=x, intgroup="family")
+}
+
+```
+
+Manually selecting interesting genes from the dataset
+
+
+```{r}
+#Manually selected genes
+
+special_genes<-c("Vcard_DToL07128","Vcard_DToL04008","Vcard_DToL02159","Vcard_DToL10306","Vcard_DToL05734","Vcard_DToL07345","Vcard_DToL07927","Vcard_DToL12485")
+
+par(mfrow=c(2,3))
+for (x in special_genes) {
+  plotCounts(ddsE1, gene=x, intgroup="condition")
+}
+
+functional_annotation[is.element(functional_annotation$GeneID,c(special_genes)),]
+```
+
+```{r}
+#read the list of genes of interest res05hef2topDowngenenames
+resE105topUp <- resE1[resE1$padj <= 0.05,]
+y<-row.names(resE105topUp)
+write.csv(y,file="E1genenames.tsv",row.names=F)
+```
+
+```{bash}
+tail -n +2 E1genenames.tsv | sed 's/\"//' | sed 's/\"//' | awk '{print $1"-RA"}' > E1topGogenenames.tsv
+```
+
+```{r}
+allRes_E1<-Dasha_topGO('E1topGogenenames.tsv')
+head(allRes_E1)
+KarinsMagic_topGO(allRes_E1)
+ggsave(plot = KarinsMagic_topGO(allRes_E1), "V_cardui_E1.pdf")
+
+```
+
+
+
+
+
+#### Contrast 2: HDAL vs HDLI, Pupa, Heads, Sexes as factor, Family as Factor
+
+
+```{r}
+resE1105<-results(ddsE1, contrast=c("condition","HDAL","HDLI"),alpha=0.05)
+resE11<-results(ddsE1, contrast=c("condition","HDAL","HDLI"))
+summary(resE11)
+resE1105 <- resE1105[order(resE1105$padj),]
+head(resE1105)
+
+#Different shrinkage
+#resE1LFC <- lfcShrink(ddsE1, coef="condition_LDAL_vs_HDAL", type="normal")
+#resE1LFCa <- lfcShrink(ddsE1, coef="condition_LDAL_vs_HDAL", type="apeglm")
+#resLFC
+
+plotMA(resE11, ylim=c(-20,20))
+#plotMA(resE1LFC, ylim=c(-3,3))
+#plotMA(resE1LFCa, ylim=c(-2,2))
+#plotMA(res05abf)#, ylim=c(-2,2))
+```
+```{r}
+# Make a basic volcano plot
+with(resE1105, plot(log2FoldChange, -log10(pvalue), pch=20, main="Volcano plot", xlim=c(-4,4)))
+
+# Add colored points: blue if padj<0.05, red if log2FC>1 and padj<0.05)
+with(subset(resE1105, padj<.05 ), points(log2FoldChange, -log10(pvalue), pch=20, col="blue"))
+with(subset(resE1105, padj<.05 & abs(log2FoldChange)>2), points(log2FoldChange, -log10(pvalue), pch=20, col="red"))
+```
+
+
+```{r}
+resE1105<-na.omit(resE1105)
+resE1105topUp <- resE1105[resE1105$padj <= 0.05 & resE1105$log2FoldChange > 0, ]
+resE1105topDown <- resE1105[resE1105$padj <= 0.05 & resE1105$log2FoldChange < 0, ]
+head(resE1105topUp,nrow(resE1105topUp))
+head(resE1105topDown,nrow(resE1105topDown))
+
+
+par(mfrow=c(1,2))
+for (x in row.names(resE1105topUp)) {
+  plotCounts(ddsE1, gene=x, intgroup="condition")
+}
+
+par(mfrow=c(1,2))
+for (x in row.names(resE1105topDown)) {
+  plotCounts(ddsE1, gene=x, intgroup="condition")
+}
+
+par(mfrow=c(1,2))
+for (x in row.names(resE1105topUp)) {
+  plotCounts(ddsE1, gene=x, intgroup="sex")
+}
+
+par(mfrow=c(1,2))
+for (x in row.names(resE1105topDown)) {
+  plotCounts(ddsE1, gene=x, intgroup="sex")
+}
+
+par(mfrow=c(1,2))
+for (x in row.names(resE1105topDown)) {
+  plotCounts(ddsE1, gene=x, intgroup="family")
+}
+
+par(mfrow=c(1,2))
+for (x in row.names(resE1105topUp)) {
+  plotCounts(ddsE1, gene=x, intgroup="family")
+}
+
+```
+
+
+```{r}
+#Manually selected genes
+
+special_genes_ALLI<-c("Vcard_DToL15090","Vcard_DToL03953","Vcard_DToL07345","Vcard_DToL15312","Vcard_DToL05602","Vcard_DToL07835","Vcard_DToL02158","Vcard_DToL04968","Vcard_DToL07353","Vcard_DToL09031")
+
+par(mfrow=c(2,3))
+for (x in special_genes_ALLI) {
+  plotCounts(ddsE1, gene=x, intgroup="condition")
+}
+
+functional_annotation[is.element(functional_annotation$GeneID,c(special_genes_ALLI)),]
+```
+
+
+```{r}
+#read the list of genes of interest res05hef2topDowngenenames
+resE1105topUp <- resE1105[resE1105$padj <= 0.05,]
+y<-row.names(resE1105topUp)
+write.csv(y,file="E11genenames.tsv",row.names=F)
+```
+
+```{bash}
+tail -n +2 E11genenames.tsv | sed 's/\"//' | sed 's/\"//' | awk '{print $1"-RA"}' > E11topGogenenames.tsv
+```
+
+
+
+
+
+```{r}
+#read the list of genes of interest 
+#"when only a list of interesting genes is provided, 
+#the user can use only tests statistics that are based on gene counts, 
+#like Fisher’s exact test, Z score and alike."
+##Algorithms:
+#classic uses all GO terms separately
+#elim eliminates genes from parentGOterms if child is more specific (bottom up analysis)
+#weight trying to determin if GOterm is better representing the list of interesting genes (is more enriched) than any other node from its neighborhood
+#parentChild 
+
+Dasha_topGO <- function(gene_list){
+
+candidate_genes <- read.table(gene_list, header = F)
+colnames(candidate_genes) <- "geneid"
+#head(candidate_genes)
+
+candidate_genes <- as.character(candidate_genes$geneid)
+geneList <- factor(as.integer(geneNames %in% candidate_genes))
+names(geneList) <- geneNames
+#head(geneList)
+
+##Biological function
+#create the topGOdata object
+GO_data_BP <- new("topGOdata", 
+               ontology="BP", 
+               allGenes=geneList, 
+               annot=annFUN.gene2GO, 
+               gene2GO=geneID2GO, 
+               nodeSize=1)
+
+BP_resultFisher_weight01 <- runTest(GO_data_BP, algorithm = "weight01", statistic = "fisher")
+
+allGO = usedGO(object = GO_data_BP)
+allRes_BP <- GenTable(GO_data_BP, 
+                   weight01Fisher = BP_resultFisher_weight01,
+                   orderBy = "weight01Fisher", 
+                   ranksOf = "weight01Fisher", 
+                   topNodes = length(allGO),
+                   numChar=1000)
+
+#multiple test correction, method Benjamini-Hochberg
+allRes_BP$p_adj <- p.adjust(allRes_BP$weight01Fisher, method = "fdr")
+allRes_BP$GO_class <- "BP"
+
+###Molecular function
+#create the topGOdata object
+GO_data_MF <- new("topGOdata", 
+               ontology="MF", 
+               allGenes=geneList, 
+               annot=annFUN.gene2GO, 
+               gene2GO=geneID2GO, 
+               nodeSize=1)
+
+MF_resultFisher_weight01 <- runTest(GO_data_MF, algorithm = "weight01", statistic = "fisher")
+
+allGO = usedGO(object = GO_data_MF)
+allRes_MF <- GenTable(GO_data_MF, 
+                   weight01Fisher = MF_resultFisher_weight01,
+                   orderBy = "weight01Fisher", 
+                   ranksOf = "weight01Fisher", 
+                   topNodes = length(allGO),
+                   numChar=1000)
+
+allRes_MF$weight01Fisher <- as.numeric(allRes_MF$weight01Fisher)
+
+#multiple test correction, method Benjamini-Hochberg
+allRes_MF$p_adj <- p.adjust(allRes_MF$weight01Fisher, method = "fdr")
+allRes_MF$GO_class <- "MF"
+
+###Cellular compartment
+#create the topGOdata object
+GO_data_CC <- new("topGOdata", 
+               ontology="CC", 
+               allGenes=geneList, 
+               annot=annFUN.gene2GO, 
+               gene2GO=geneID2GO, 
+               nodeSize=1)
+
+CC_resultFisher_weight01 <- runTest(GO_data_CC, algorithm = "weight01", statistic = "fisher")
+
+allGO = usedGO(object = GO_data_CC)
+allRes_CC <- GenTable(GO_data_CC, 
+                   weight01Fisher = CC_resultFisher_weight01,
+                   orderBy = "weight01Fisher", 
+                   ranksOf = "weight01Fisher", 
+                   topNodes = length(allGO),
+                   numChar=1000)
+
+allRes_CC$weight01Fisher <- as.numeric(allRes_CC$weight01Fisher)
+#multiple test correction, method Benjamini-Hochberg
+allRes_CC$p_adj <- p.adjust(allRes_CC$weight01Fisher, method = "fdr")
+allRes_CC$GO_class <- "CC"
+
+#assembling all the data
+allRes_all_comb <- rbind(allRes_BP[allRes_BP$weight01Fisher<=0.05, ], allRes_CC[allRes_CC$weight01Fisher<=0.05, ], allRes_MF[allRes_MF$weight01Fisher<=0.05, ])
+
+return(allRes_all_comb)
+
+}
+```
+
+```{r}
+allRes_all_comb<-Dasha_topGO('E11topGogenenames.tsv')
+```
+
+
+```{r}
+#allRes_all_comb <- rbind(allRes_BP[allRes_BP$weight01Fisher<=0.05, ], allRes_CC[allRes_CC$weight01Fisher<=0.05, ], allRes_MF[allRes_MF$weight01Fisher<=0.05, ])
+
+KarinsMagic_topGO <- function(allRes_all_comb){
+  
+allRes_all_comb$GO_descr <- paste(allRes_all_comb$Term," (",allRes_all_comb$GO.ID,")", sep = "")
+
+#plot go-terma and number of significant genes
+plot_topGo=ggplot(allRes_all_comb, aes(reorder(GO_descr, -Significant), Significant)) +
+    geom_bar(stat = "identity", aes(fill=GO_class)) +
+  facet_grid(~GO_class, scales = "free_x", space = "free_x") +
+  ylab("Number of genes (p-value < 0.01)") +
+  scale_fill_discrete(guide = guide_legend(label.position = "top")) +
+  theme(panel.background = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_blank(),
+        axis.line = element_line(size = 0.2, colour = "grey"),
+        axis.text.x = element_text(size = 5, angle = 90, vjust = 0.5, hjust = 1),
+        axis.text.y = element_text(size = 5, angle = 90, hjust = 0.5),
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 5, angle = 90),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 5, angle = 90, vjust = 0.5),
+        legend.position = "top"
+        )
+
+#ggsave(plot = plot_topGo, "V_cardui_E11.pdf")
+return(plot_topGo)
+
+}
+```
+
+
+
+```{r}
+KarinsMagic_topGO(allRes_all_comb)
+```
+
+
+```{r}
+#allRes_all_comb <- rbind(allRes_BP[allRes_BP$weight01Fisher<=0.05, ], allRes_CC[allRes_CC$weight01Fisher<=0.05, ], allRes_MF[allRes_MF$weight01Fisher<=0.05, ])
+
+allRes_all_comb$GO_descr <- paste(allRes_all_comb$Term," (",allRes_all_comb$GO.ID,")", sep = "")
+
+#plot go-terma and number of significant genes
+plot_topGo=ggplot(allRes_all_comb, aes(reorder(GO_descr, -Significant), Significant)) +
+    geom_bar(stat = "identity", aes(fill=GO_class)) +
+  facet_grid(~GO_class, scales = "free_x", space = "free_x") +
+  ylab("Number of genes (p-value < 0.01)") +
+  scale_fill_discrete(guide = guide_legend(label.position = "top")) +
+  theme(panel.background = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_blank(),
+        axis.line = element_line(size = 0.2, colour = "grey"),
+        axis.text.x = element_text(size = 5, angle = 90, vjust = 0.5, hjust = 1),
+        axis.text.y = element_text(size = 5, angle = 90, hjust = 0.5),
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 5, angle = 90),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 5, angle = 90, vjust = 0.5),
+        legend.position = "top"
+        )
+
+ggsave(plot = plot_topGo, "V_cardui_E11.pdf")
+plot_topGo
+```
+
+
+#### Contrast 3: HDAL vs LDAL, Adult, Heads, Sexes as factor, Family as Factor
+
+```{r}
+colDataE3<-colDataHDLD[(colDataHDLD$stage == "ADM" | colDataHDLD$stage == "ADF" | colDataHDLD$stage == "ADMA"),] #selecting pupa samples only
+#head(colDataE1)
+colDataE3<-colDataE3[colDataE3$tissue == "H", ] #selecting head samples only
+#head(colDataE1)
+
+
+##Adding sex information
+colDataE3$sex <- colDataE3$stage
+colDataE3$sex<-gsub("AD","",as.character(colDataE3$sex))
+colDataE3$sex<-gsub("A","",as.character(colDataE3$sex))
+colDataE3$stage<-gsub("F","",as.character(colDataE3$stage))
+colDataE3$stage<-gsub("MA","",as.character(colDataE3$stage))
+colDataE3$stage<-gsub("M","",as.character(colDataE3$stage))
+
+##Selecting count data
+sample_names<-colDataE3$sample
+countE3<-countHDLD[,c(sample_names)]
+
+head(colDataE3)
+head(countE3)
+```
+
+
+```{r}
+ddsE3 <- DESeqDataSetFromMatrix(countData=countE3, colData =colDataE3, design = ~family + sex + condition)
+
+#Basic filtering
+keep <- rowSums(counts(ddsE3)) >= 10
+ddsE3 <- ddsE3[keep,]
+head(ddsE3)
+
+```
+
+
+
+```{r}
+ddsE3 <- DESeqDataSetFromMatrix(countData=countE3, colData =colDataE3, design = ~family + sex + condition)
+
+#Basic filtering
+keep3 <- rowSums(counts(ddsE3)) >= 10
+ddsE3 <- ddsE3[keep3,]
+head(ddsE3)
+
+#Running DeSeQ
+ddsE3 <- DESeq(ddsE3)
+
+#Summary of results function
+#Setting up p-value to 0.05
+resE3 <- results(ddsE3)
+resE305 <- results(ddsE3, alpha=0.05)
+summary(resE305)
+resE305 <- resE305[order(resE305$padj),]
+head(resE305)
+
+#Different shrinkage
+resE3LFC <- lfcShrink(ddsE3, coef="condition_LDAL_vs_HDAL", type="normal")
+resE3LFCa <- lfcShrink(ddsE3, coef="condition_LDAL_vs_HDAL", type="apeglm")
+#resLFC
+
+plotMA(resE3, ylim=c(-20,20))
+plotMA(resE3LFC, ylim=c(-3,3))
+plotMA(resE3LFCa, ylim=c(-2,2))
+#plotMA(res05abf)#, ylim=c(-2,2))
+
+# Make a basic volcano plot
+with(resE3, plot(log2FoldChange, -log10(pvalue), pch=20, main="condition_LDAL_vs_HDAL_pupa_head", xlim=c(-4,4),ylim=c(0,6)))
+
+# Add colored points: blue if padj<0.05, red if log2FC>1 and padj<0.05)
+with(subset(resE3, padj<.05 ), points(log2FoldChange, -log10(pvalue), pch=20, col="blue"))
+with(subset(resE3, padj<.05 & abs(log2FoldChange)>2), points(log2FoldChange, -log10(pvalue), pch=20, col="red"))
+```
+
+
+```{r}
+ddsE3 <- DESeqDataSetFromMatrix(countData=countE3, colData =colDataE3, design = ~family + sex + condition)
+
+#Basic filtering
+keep3 <- rowSums(counts(ddsE3)) >= 10
+ddsE3 <- ddsE3[keep3,]
+head(ddsE3)
+
+#Running DeSeQ
+ddsE3 <- DESeq(ddsE3)
+
+#Summary of results function
+#Setting up p-value to 0.05
+resE3 <- results(ddsE3)
+resE305 <- results(ddsE3, alpha=0.05)
+summary(resE305)
+resE305 <- resE305[order(resE305$padj),]
+head(resE305)
+
+#Different shrinkage
+resE3LFC <- lfcShrink(ddsE3, coef="condition_LDAL_vs_HDAL", type="normal")
+resE3LFCa <- lfcShrink(ddsE3, coef="condition_LDAL_vs_HDAL", type="apeglm")
+#resLFC
+
+plotMA(resE3, ylim=c(-20,20))
+plotMA(resE3LFC, ylim=c(-3,3))
+plotMA(resE3LFCa, ylim=c(-2,2))
+#plotMA(res05abf)#, ylim=c(-2,2))
+
+# Make a basic volcano plot
+with(resE3, plot(log2FoldChange, -log10(pvalue), pch=20, main="condition_LDAL_vs_HDAL_pupa_head", xlim=c(-4,4),ylim=c(0,6)))
+
+# Add colored points: blue if padj<0.05, red if log2FC>1 and padj<0.05)
+with(subset(resE3, padj<.05 ), points(log2FoldChange, -log10(pvalue), pch=20, col="blue"))
+with(subset(resE3, padj<.05 & abs(log2FoldChange)>2), points(log2FoldChange, -log10(pvalue), pch=20, col="red"))
+```
+
+```{r}
+
+candidate_genes<-function(dds,res){
+
+res<-na.omit(res)
+restopUp <- res[res$padj <= 0.05 & res$log2FoldChange > 0, ]
+restopDown <- res[res$padj <= 0.05 & res$log2FoldChange < 0, ]
+#head(restopUp,nrow(restopUp))
+#head(restopDown,nrow(restopDown))
+
+
+par(mfrow=c(1,2))
+for (x in row.names(restopUp)) {
+  plotCounts(dds, gene=x, intgroup="condition")
+}
+
+par(mfrow=c(1,2))
+for (x in row.names(restopDown)) {
+  plotCounts(dds, gene=x, intgroup="condition")
+}
+
+par(mfrow=c(1,2))
+for (x in row.names(restopUp)) {
+  plotCounts(dds, gene=x, intgroup="sex")
+}
+
+par(mfrow=c(1,2))
+for (x in row.names(restopDown)) {
+  plotCounts(dds, gene=x, intgroup="sex")
+}
+
+par(mfrow=c(1,2))
+for (x in row.names(restopDown)) {
+  plotCounts(dds, gene=x, intgroup="family")
+}
+
+par(mfrow=c(1,2))
+for (x in row.names(restopUp)) {
+  plotCounts(dds, gene=x, intgroup="family")
+}
+
+}
+
+```
+
+
+```{r}
+candidate_genes(ddsE3,resE3)
+```
+
+
+```{r}
+#Manually selected genes
+
+special_genesE3<-c("Vcard_DToL04008","Vcard_DToL18160","Vcard_DToL08757")
+
+#par(mfrow=c(2,3))
+for (x in special_genesE3) {
+  plotCounts(ddsE3, gene=x, intgroup="condition")
+}
+
+functional_annotation[is.element(functional_annotation$GeneID,c(special_genesE3)),]
 ```
 
 

@@ -761,6 +761,7 @@ allRes_MF <- GenTable(GO_data_MF,
                    numChar=1000)
 
 allRes_MF$weight01Fisher <- as.numeric(allRes_MF$weight01Fisher)
+
 #multiple test correction, method Benjamini-Hochberg
 allRes_MF$p_adj <- p.adjust(allRes_MF$weight01Fisher, method = "fdr")
 allRes_MF$GO_class <- "MF"
