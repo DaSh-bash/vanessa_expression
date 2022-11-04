@@ -7,6 +7,9 @@ library(topGO)
 library(ggplot2)
 library(DESeq2)
 library(apeglm)
+library("clusterProfiler")
+library("enrichplot")
+library("data.table")
 ```
 
 
@@ -123,13 +126,6 @@ colDataLRab['family'] <- c("X18","X18","X5","X4","X4","X5","X5","U1","U2","U3")
 ```
 
 
-```{r}
-vsdata <- vst(ddsLRab, blind=FALSE)
-plotPCA(vsdata, intgroup=c("condition"))
-```
-
-
-
 We use function plotMA, that shows the log2 fold changes attributable to a given variable over the mean of normalized counts for all the samples in the DESeqDataSet. Points are colored blue if the adjusted p-value is less than 0.1.
 ```{r}
 plotMA(resLRab, ylim=c(-5,5))
@@ -205,7 +201,6 @@ Filtering for lower p-values
 res05abf <- results(ddsLRabf, alpha=0.05)
 summary(res05abf)
 
-
 #vsdataab <- vst(ddsLRabf, blind=FALSE)
 #plotPCA(vsdataab, intgroup=c("condition"))
 
@@ -241,29 +236,138 @@ res05abftopDowngenenames <- row.names(res05abftopDown)
 res05abftopDowngenenames
 ```
 
+
 ```{r}
 
-par(mfrow=c(2,3))
-for (x in res05abftopDowngenenames) {
-  #plotCounts(ddsLRabf, gene=x, intgroup="condition")
-}
+#resLFC <- lfcShrink(ddsLRab, coef="condition_LI_vs_AL", type="ashr")
+##resLFCa <- lfcShrink(ddsLRabf, coef="condition_LI_vs_AL", type="apeglm")
+#resLFC
+#reset par
+par(mfrow=c(1,1))
+# Make a basic volcano plot
+with(resLFCa, plot(log2FoldChange, -log10(pvalue), pch=20, main="Volcano plot", xlim=c(-1,1)))
 
-#grep "Vcard_DToL04426" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
+# Add colored points: blue if padj<0.01, red if log2FC>1 and padj<0.05)
+with(subset(resLFCa, padj<.05 ), points(log2FoldChange, -log10(pvalue), pch=20, col="blue"))
+with(subset(resLFCa, padj<.05 & abs(log2FoldChange)>2), points(log2FoldChange, -log10(pvalue), pch=20, col="red"))
 
+
+#reset par
+par(mfrow=c(1,1))
+# Make a basic volcano plot
+with(res05abf, plot(log2FoldChange, -log10(pvalue), pch=20, col="grey", main="Abdomen", xlim=c(-6,6), ylim=c(0,20)))
+
+# Add colored points: blue if padj<0.01, red if log2FC>1 and padj<0.05)
+#with(subset(res05abf, padj<.05 ), points(log2FoldChange, -log10(pvalue), pch=20, col="blue"))
+with(subset(res05abf, padj<.05 & abs(log2FoldChange)>2), points(log2FoldChange, -log10(pvalue), pch=20, col="#FF8C00"))
+```
+
+```{r}
+summary(resLFCa)
+resLFCprep<-na.omit(resLFCa)
+resLFCabf <- resLFCprep[resLFCprep$padj <= 0.05 & resLFCprep$log2FoldChange > 2, ]
+summary(resLFCabf)
+```
+
+
+#### Candidate genes
+
+```{r}
+fun_ann <- read.csv(file ="/Users/dshipilina/GitHub/VanessaExpression/vcard.func.annot.csv",header = FALSE)
+names(fun_ann)[names(fun_ann)=="V1"]<-"GeneID"
+names(fun_ann)[names(fun_ann)=="V8"]<-"Function"
+names(fun_ann)[names(fun_ann)=="V9"]<-"GeneName"
+names(fun_ann)[names(fun_ann)=="V21"]<-"Func_Categ"
+fun_ann$GeneID<-gsub("-RA","",as.character(fun_ann$GeneID))
+functional_annotation<-fun_ann[,c("GeneID","Function","GeneName","Func_Categ")]
+
+functional_annotation
+
+```
+
+
+
+
+```{r}
+res05abf<-na.omit(res05abf)
+res05abftopUp <- res05abf[res05abf$padj <= 0.05 & res05abf$log2FoldChange > 2, ]
+res05abftopDown <- res05abf[res05abf$padj <= 0.05 & res05abf$log2FoldChange < 2, ]
+length(row.names(res05abftopUp))
+length(row.names(res05abftopDown))
+
+
+res05abftopUpfun <-functional_annotation[is.element(functional_annotation$GeneID,c(row.names(res05abftopUp))),]
+write.csv(res05abftopUpfun,file="cand_genes_adult_ab_topUp.tsv",row.names=T)
+res05abftopDownfun <- functional_annotation[is.element(functional_annotation$GeneID,c(row.names(res05abftopDown))),]
+write.csv(res05abftopDownfun,file="cand_genes_adult_ab_topDown.tsv",row.names=T)
+
+#res05abftopUpgenenames <- row.names(res05abftopUp)
+#res05abftopUpgenenames
+
+#res05abftopDowngenenames <- row.names(res05abftopDown)
+#res05abftopDowngenenames
+
+```
+
+
+
+```{r}
+cand_genes_adult_ab_top <-c(row.names(res05abftopUp),row.names(res05abftopDown))
+length(cand_genes_adult_ab_top)
+#par(mfrow=c(2,3))
+#for (x in cand_genes_adult_ab_top) {
+#  plotCounts(ddsLRabf, gene=x, intgroup="condition")
+#}
+
+
+###### PLOTTING CANDIDATE GENES #######
+ 
 par(mfrow=c(1,2))
 
-plotCounts(ddsLRabf, gene="Vcard_DToL01271", intgroup="condition")
-plotCounts(ddsLRabf, gene="Vcard_DToL05461", intgroup="condition")
-#plotCounts(ddsLRhef2, gene="Vcard_DToL02971", intgroup="condition")
-#plotCounts(ddsLRhef2, gene="Vcard_DToL06375", intgroup="condition")
-#plotCounts(ddsLRhef2, gene="Vcard_DToL09542", intgroup="condition")
-#plotCounts(ddsLRhef2, gene="Vcard_DToL14898", intgroup="condition")
+#plotCounts(ddsLRabf, gene="Vcard_DToL01271", intgroup="condition")
+#plotCounts(ddsLRabf, gene="Vcard_DToL05461", intgroup="condition")
+plotCounts(ddsLRabf, gene="Vcard_DToL08950", intgroup="condition")
+#plotCounts(ddsLRabf, gene="Vcard_DToL01848", intgroup="condition")
+plotCounts(ddsLRabf, gene="Vcard_DToL05597", intgroup="condition")
+plotCounts(ddsLRabf, gene="Vcard_DToL07986", intgroup="condition")
+plotCounts(ddsLRabf, gene="Vcard_DToL11904", intgroup="condition")
+#plotCounts(ddsLRabf, gene="Vcard_DToL12126", intgroup="condition")
+plotCounts(ddsLRabf, gene="Vcard_DToL02554", intgroup="condition")
+#plotCounts(ddsLRabf, gene="Vcard_DToL02600", intgroup="condition")
+plotCounts(ddsLRabf, gene="Vcard_DToL13323", intgroup="condition")
+
+
+#plotCounts(ddsLRabf, gene="Vcard_DToL01271", intgroup="condition")
+#plotCounts(ddsLRabf, gene="Vcard_DToL05461", intgroup="condition")
+plotCounts(ddsLRabf, gene="Vcard_DToL08950", intgroup="condition")
+#plotCounts(ddsLRabf, gene="Vcard_DToL01848", intgroup="condition")
+plotCounts(ddsLRabf, gene="Vcard_DToL05597", intgroup="condition")
+plotCounts(ddsLRabf, gene="Vcard_DToL07986", intgroup="condition")
+plotCounts(ddsLRabf, gene="Vcard_DToL11904", intgroup="condition")
+#plotCounts(ddsLRabf, gene="Vcard_DToL12126", intgroup="condition")
+plotCounts(ddsLRabf, gene="Vcard_DToL02554", intgroup="condition")
+#plotCounts(ddsLRabf, gene="Vcard_DToL02600", intgroup="condition")
+plotCounts(ddsLRabf, gene="Vcard_DToL13323", intgroup="condition")
+
+cand_genes_adult_ab_best_list <- c("Vcard_DToL01271", "Vcard_DToL05461","Vcard_DToL08950", "Vcard_DToL01848","Vcard_DToL05597","Vcard_DToL07986", "Vcard_DToL11904", "Vcard_DToL12126","Vcard_DToL02554","Vcard_DToL02600", "Vcard_DToL13323")
+cand_genes_adult_ab_best <- functional_annotation[is.element(functional_annotation$GeneID,cand_genes_adult_ab_best_list),]
+cand_genes_adult_ab_best
 ```
+```{r}
+par(mfrow=c(2,3))
+
+for (x in row.names(res05abf)) {
+  plotCounts(ddsLRabf, gene=x, intgroup="condition")
+}
+```
+
+
 ```{r}
 res05abftopDowngenenames
 y<-res05abftopDowngenenames
 write.csv(y,file="abftopDowngenenames.tsv",row.names=F)
 ```
+
 
 
 ```{bash}
@@ -424,6 +528,16 @@ plotPCA(vsdata, intgroup=c("condition"))
 plotMA(resLRhef2, ylim=c(-10,10))
 ```
 
+```{r}
+#reset par
+par(mfrow=c(1,1))
+# Make a basic volcano plot
+with(resLRhef2, plot(log2FoldChange, -log10(pvalue), pch=20, col="grey", main="Head",  xlim=c(-6,6), ylim=c(0,20)))
+
+# Add colored points: blue if padj<0.01, red if log2FC>1 and padj<0.05)
+#with(subset(res05abf, padj<.05 ), points(log2FoldChange, -log10(pvalue), pch=20, col="blue"))
+with(subset(resLRhef2, padj<.05 & abs(log2FoldChange)>2), points(log2FoldChange, -log10(pvalue), pch=20, col="#FF8C00"))
+```
 
 
 ```{r}
@@ -479,15 +593,15 @@ plotMA(resLFCh, ylim=c(-4,4))
 #plotMA(res05abf)#, ylim=c(-2,2))
 ```
 
-
+#### Candidate genes
 Selecting upregulated genes of interest based on arbitrary (stringent) criteria
 ```{r}
 #res05hef2[order(res05hef2$padj),]
 res05hef2<-na.omit(res05hef2)
-res05hef2topUp <- res05hef2[res05hef2$padj <= 0.05 & res05hef2$log2FoldChange > 0, ]
-res05hef2topDown <- res05hef2[res05hef2$padj <= 0.05 & res05hef2$log2FoldChange < 0, ]
-res05hef2topUp
-res05hef2topDown
+res05hef2topUp <- res05hef2[res05hef2$padj <= 0.05 & res05hef2$log2FoldChange > 2, ]
+res05hef2topDown <- res05hef2[res05hef2$padj <= 0.05 & res05hef2$log2FoldChange < 2, ]
+length(row.names(res05hef2topUp))
+length(row.names(res05hef2topDown))
 
 res05hef2topUpgenenames <- row.names(res05hef2topUp)
 res05hef2topUpgenenames
@@ -495,140 +609,87 @@ res05hef2topUpgenenames
 res05hef2topDowngenenames <- row.names(res05hef2topDown)
 res05hef2topDowngenenames
 
+
+res05hef2topUpfun <-functional_annotation[is.element(functional_annotation$GeneID,c(row.names(res05hef2topUp))),]
+write.csv(res05hef2topUpfun,file="cand_genes_adult_he_topUp.tsv",row.names=T)
+res05hef2topDownfun <- functional_annotation[is.element(functional_annotation$GeneID,c(row.names(res05hef2topDown))),]
+write.csv(res05hef2topDownfun,file="cand_genes_adult_he_topDown.tsv",row.names=T)
+
 ```
 
-```{bash}
-grep "Vcard_DToL01495" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
-grep "Vcard_DToL03461" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
-```
 
 ```{r}
-
-par(mfrow=c(2,3))
-
-
-for (x in res05hef2topUpgenenames) {
-  plotCounts(ddsLRhef2, gene=x, intgroup="condition")
-}
-
-par(mfrow=c(1,1))
-plotCounts(ddsLRhef2, gene="Vcard_DToL01495", intgroup="condition")
-plotCounts(ddsLRhef2, gene="Vcard_DToL03461", intgroup="condition")
-
-
-```
-
-
-
-Plotting genes of interest:
-```{r}
-par(mfrow=c(2,3))
-
-
-#for (x in res05hef2topUpgenenames) {
+cand_genes_adult_he_top <-c(row.names(res05hef2topUp),row.names(res05hef2topDown))
+length(cand_genes_adult_he_top)
+#par(mfrow=c(2,3))
+#for (x in cand_genes_adult_he_top) {
 #  plotCounts(ddsLRhef2, gene=x, intgroup="condition")
 #}
 
+
+###### PLOTTING CANDIDATE GENES #######
+ 
 par(mfrow=c(1,2))
+
+#plotCounts(ddsLRhef2, gene="Vcard_DToL07064", intgroup="condition")
+#plotCounts(ddsLRhef2, gene="Vcard_DToL09601", intgroup="condition")
 plotCounts(ddsLRhef2, gene="Vcard_DToL01495", intgroup="condition")
-plotCounts(ddsLRhef2, gene="Vcard_DToL03461", intgroup="condition")
-
-```
-
-```{r}
-z<-res05hef2topDowngenenames
-write.csv(z,file="hef2topDowngenenames.tsv",row.names=F)
-```
-
-```{bash}
-tail -n +2 hef2topDowngenenames.tsv | sed 's/\"//' | sed 's/\"//' | awk '{print $1"-RA"}' > LRhef2topALligenenames.tsv
-grep -f LRhef2topALligenenames.tsv vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}' | sort
-```
-
-
-
-
-
-```{r}
-par(mfrow=c(2,3))
-
-#for (x in res05hef2topDowngenenames) {
-#  plotCounts(ddsLRhef2, gene=x, intgroup="condition")
-#}
-
-#grep "Vcard_DToL04426" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
-
-par(mfrow=c(2,3))
-
+#plotCounts(ddsLRhef2, gene="Vcard_DToL01126", intgroup="condition")
+#plotCounts(ddsLRhef2, gene="Vcard_DToL02425", intgroup="condition")
+#plotCounts(ddsLRhef2, gene="Vcard_DToL02971", intgroup="condition")
 plotCounts(ddsLRhef2, gene="Vcard_DToL04426", intgroup="condition")
-plotCounts(ddsLRhef2, gene="Vcard_DToL02425", intgroup="condition")
-plotCounts(ddsLRhef2, gene="Vcard_DToL02971", intgroup="condition")
+#plotCounts(ddsLRhef2, gene="Vcard_DToL05110", intgroup="condition")
 plotCounts(ddsLRhef2, gene="Vcard_DToL06375", intgroup="condition")
 plotCounts(ddsLRhef2, gene="Vcard_DToL09542", intgroup="condition")
-plotCounts(ddsLRhef2, gene="Vcard_DToL14898", intgroup="condition")
+#plotCounts(ddsLRhef2, gene="Vcard_DToL11161", intgroup="condition")
+#plotCounts(ddsLRhef2, gene="Vcard_DToL13323", intgroup="condition")
+#plotCounts(ddsLRhef2, gene="Vcard_DToL13698", intgroup="condition")
+#plotCounts(ddsLRhef2, gene="Vcard_DToL14898", intgroup="condition")
+#plotCounts(ddsLRhef2, gene="Vcard_DToL17591", intgroup="condition")
 
 
+
+cand_genes_adult_he_best_list <- c("Vcard_DToL04426","Vcard_DToL01495","Vcard_DToL06375","Vcard_DToL09542")
+cand_genes_adult_he_best <- functional_annotation[is.element(functional_annotation$GeneID,cand_genes_adult_he_best_list),]
+cand_genes_adult_he_best
 ```
-
-```{bash}
-grep "Vcard_DToL04426" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
-grep "Vcard_DToL02425" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
-grep "Vcard_DToL02971" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
-grep "Vcard_DToL06375" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
-grep "Vcard_DToL09542" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
-#grep "Vcard_DToL09542" vcard.func.annot.csv
-grep "Vcard_DToL14898" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
-```
-
-```{r}
-z<-res05abftopUpgenenames
-write.csv(z,file="abtopUpgenenames.tsv",row.names=F)
-
-z<-res05abftopDowngenenames
-write.csv(z,file="abtopDowngenenames.tsv",row.names=F)
-
-z<-res05hef2topUpgenenames
-write.csv(z,file="hetopUpgenenames.tsv",row.names=F)
-
-z<-res05hef2topDowngenenames
-write.csv(z,file="hetopDowngenenames.tsv",row.names=F)
-```
-
-
-```{bash}
-tail -n +2 abtopUpgenenames.tsv | sed 's/\"//' | sed 's/\"//' | awk '{print $1"-RA"}' > LRabtopUpgenenames.tsv
-tail -n +2 abtopDowngenenames.tsv | sed 's/\"//' | sed 's/\"//' | awk '{print $1"-RA"}' > LRabtopDowngenenames.tsv
-tail -n +2 hetopUpgenenames.tsv | sed 's/\"//' | sed 's/\"//' | awk '{print $1"-RA"}' > LRhetopUpgenenames.tsv
-tail -n +2 hetopDowngenenames.tsv | sed 's/\"//' | sed 's/\"//' | awk '{print $1"-RA"}' > LRhetopDowngenenames.tsv
-#grep -f LRhef2topalLIgenenames.tsv vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}' | sort
-```
-
-
 
 
 
 
 ## Testing overlaps between gene sets 
 
+```{r}
+length(row.names(res05hef2topDown))
+length(row.names(res05hef2topUp))
+length(row.names(res05abftopDown))
+length(row.names(res05abftopUp))
+
+# "Downregulated in heads and abdomens with limited resource"
+intersect(row.names(res05hef2topDown),row.names(res05abftopDown))
+# Upregulated in heads and abdomens with limited resource
+intersect(row.names(res05abftopUp),row.names(res05hef2topUp))
+# Downregulated in heads, upregulated in abdomens with limited resource
+intersect(row.names(res05abftopUp),row.names(res05hef2topDown))
+#Upregulated in heads, downregulated in abdomens with limited resource
+intersect(row.names(res05abftopDown),row.names(res05hef2topUp))
+#res05hef2topUp
+```
 
 
 ```{bash}
-#hef2ALligenenames.tsv
-#LRabftopALligenenames.tsv
-#LRhef2genenames.tsv
-#LRhef2topalLIgenenames.tsv
 
 echo "Downregulated in heads and abdomens with limited resource"
-comm -12 LRhetopDowngenenames.tsv LRabtopDowngenenames.tsv
+comm -12 cand_genes_adult_ab_topDown.tsv cand_genes_adult_he_topDown.tsv
 
 echo "Upregulated in heads and abdomens with limited resource"
-comm -12 LRhetopUpgenenames.tsv LRabtopUpgenenames.tsv
+comm -12 cand_genes_adult_ab_topUp.tsv cand_genes_adult_he_topUp.tsv
 
 echo "Downregulated in heads, upregulated in abdomens with limited resource"
-comm -12 LRhetopDowngenenames.tsv LRabtopUpgenenames.tsv
+comm -12 cand_genes_adult_ab_topUp.tsv cand_genes_adult_he_topDown.tsv
 
 echo "Upregulated in heads, downregulated in abdomens with limited resource"
-comm -12 LRhetopUpgenenames.tsv LRabtopDowngenenames.tsv
+comm -12 cand_genes_adult_ab_topDown.tsv cand_genes_adult_he_topUp.tsv
 
 ```
 
@@ -669,8 +730,8 @@ geneNames <- names(geneID2GO)
 head(geneNames)
 
 #read the list of genes of interest res05hef2topDowngenenames
-x<-res05hef2topDowngenenames
-write.csv(x,file="x.tsv",row.names=F)
+#x<-res05hef2topDowngenenames
+#write.csv(x,file="x.tsv",row.names=F)
 ```
 
 Prepping file with all genes of interest
@@ -684,17 +745,64 @@ x<-res05hef2topUpgenenames
 write.csv(x,file="hef2topUpgenenames.tsv",row.names=F)
 ```
 
-
-```{bash}
-tail -n +2 hef2topDowngenenames.tsv > hef2topDowngenename.tsv
-tail -n +2 hef2topUpgenenames.tsv > hef2topUpgenename.tsv
-
-cat hef2topDowngenename.tsv hef2topUpgenename.tsv > LRhefgenename.tsv
-
-tail -n +2 LRhefgenename.tsv | sed 's/\"//' | sed 's/\"//' | awk '{print $1"-RA"}' > LRhef2genenames.tsv
+```{r}
+cand_adult_all <- c(row.names(res05hef2topUp),row.names(res05hef2topDown),row.names(res05abftopDown),row.names(res05abftopUp))
+#write.csv(cand_adult_all,file="cand_genes_adult_topGO.tsv",row.names = F)
 ```
 
 
+```{bash}
+#tail -n +2 hef2topDowngenenames.tsv > hef2topDowngenename.tsv
+#tail -n +2 hef2topUpgenenames.tsv > hef2topUpgenename.tsv
+
+#cat hef2topDowngenename.tsv hef2topUpgenename.tsv > LRhefgenename.tsv
+
+tail -n +2 cand_genes_adult_topGO.tsv | sed 's/\"//' | sed 's/\"//' | awk '{print $1"-RA"}' > cand_genes_adult_topGOclean.tsv
+```
+
+
+```{r}
+candidate_genes <- read.table("cand_genes_adult_topGOclean.tsv", header = F)
+colnames(candidate_genes) <- "geneid"
+#cand_adult_all
+#head(candidate_genes)
+
+candidate_genes <- as.character(candidate_genes$geneid)
+geneList <- factor(as.integer(geneNames %in% candidate_genes))
+names(geneList) <- geneNames
+head(geneList)
+
+##Biological function
+#create the topGOdata object
+GO_dataAdult_BP <- new("topGOdata", 
+               ontology="BP", 
+               allGenes=geneList, 
+               annot=annFUN.gene2GO, 
+               gene2GO=geneID2GO, 
+               nodeSize=1)
+```
+
+
+
+```{r}
+candidate_genes <- read.table("resLTR105filtr.tsv", header = F)
+colnames(candidate_genes) <- "geneid"
+#head(candidate_genes)
+
+candidate_genes <- as.character(candidate_genes$geneid)
+geneList <- factor(as.integer(geneNames %in% candidate_genes))
+names(geneList) <- geneNames
+#head(geneList)
+
+##Biological function
+#create the topGOdata object
+GO_dataLTR_BP <- new("topGOdata", 
+               ontology="BP", 
+               allGenes=geneList, 
+               annot=annFUN.gene2GO, 
+               gene2GO=geneID2GO, 
+               nodeSize=1)
+```
 
 ```{r}
 #read the list of genes of interest 
@@ -804,31 +912,131 @@ allRes_all_comb<-Dasha_topGO("LRhef2genenames.tsv")
 ```
 
 
+
 ```{r}
-allRes_all_comb <- rbind(allRes_BP[allRes_BP$weight01Fisher<=0.05, ], allRes_CC[allRes_CC$weight01Fisher<=0.05, ], allRes_MF[allRes_MF$weight01Fisher<=0.05, ])
+adul_resultFisher_weight01 <- runTest(GO_dataAdult_BP, algorithm = "weight01", statistic = "fisher")
 
-allRes_all_comb$GO_descr <- paste(allRes_all_comb$Term," (",allRes_all_comb$GO.ID,")", sep = "")
+#BP_resultFisher_classic <- runTest(GO_dataLTR_BP, algorithm = "classic", statistic = "fisher")
+#BP_resultFisher_classic
 
-#plot go-terma and number of significant genes
-plot_topGo=ggplot(allRes_all_comb, aes(reorder(GO_descr, -Significant), Significant)) +
-    geom_bar(stat = "identity", aes(fill=GO_class)) +
-  facet_grid(~GO_class, scales = "free_x", space = "free_x") +
-  ylab("Number of genes (p-value < 0.01)") +
-  scale_fill_discrete(guide = guide_legend(label.position = "top")) +
+#BP_resultFisher_parentChild <- runTest(GO_dataLTR_BP, algorithm = "parentChild", statistic = "fisher")
+#BP_resultFisher_parentChild
+
+#BP_resultFisher_elim <- runTest(GO_dataLTR_BP, algorithm = "elim", statistic = "fisher")
+#BP_resultFisher_elim
+
+allGO = usedGO(object = GO_dataAdult_BP)
+allResAdult_BP <- GenTable(GO_dataAdult_BP, 
+                   weight01Fisher = BP_resultFisher_weight01, 
+                   orderBy = "weight01Fisher", 
+                   ranksOf = "weight01Fisher", 
+                   topNodes = length(allGO),
+                   numChar=1000)
+
+allResAdult_BP$weight01Fisher <- as.numeric(allResAdult_BP$weight01Fisher)
+allResAdult_BP[allResAdult_BP$weight01Fisher<=0.05, ]
+
+#allResLTR_BP$parentChFisher <- as.numeric(allResLTR_BP$parentChFisher)
+#allResLTR_BP[allResLTR_BP$parentChFisher<=0.05, ]
+
+#allResLTR_BP$elimFisher <- as.numeric(allResLTR_BP$elimFisher)
+#allResLTR_BP[allResLTR_BP$elimFisher<=0.05, ]
+
+
+```
+
+
+Multiple test correction
+```{r}
+allResAdult_BP$p_adj_fdr <- p.adjust(allResAdult_BP$weight01Fisher, method = "fdr")
+allResAdult_BP$p_adj_holm <- p.adjust(allResAdult_BP$weight01Fisher, method = "holm")
+allResAdult_BP$p_adj_bonferroni <- p.adjust(allResAdult_BP$weight01Fisher, method = "bonferroni")
+allResAdult_BP$p_adj_BH <- p.adjust(allResAdult_BP$weight01Fisher, method = "BH")
+
+allResAdult_BP
+```
+
+```{r}
+topGOAdult_BP <- allResAdult_BP[allResAdult_BP$weight01Fisher<=0.01, ]
+nrow(allResAdult_BP[allResAdult_BP$weight01Fisher<=0.01, ])
+
+
+topGOAdult_BP$GO_descr <- paste(topGOAdult_BP$Term," (",topGOAdult_BP$GO.ID,")", sep = "")
+
+plot_topGoAdult=ggplot(topGOAdult_BP, aes(x=reorder(GO_descr, -Significant), y=Significant)) + geom_bar(stat="identity", fill="#512887") + 
   theme(panel.background = element_blank(),
         strip.background = element_blank(),
         strip.text = element_blank(),
-        axis.line = element_line(size = 0.2, colour = "grey"),
-        axis.text.x = element_text(size = 5, angle = 90, vjust = 0.5, hjust = 1),
-        axis.text.y = element_text(size = 5, angle = 90, hjust = 0.5),
+        axis.line = element_line(size = 0.2, colour = "black"),
+        axis.text.x = element_text(size = 8, angle = 90, vjust = 0.5, hjust = 1),
+        axis.text.y = element_text(size = 8, angle = 90, hjust = 0.5),
         axis.title.x = element_blank(),
-        axis.title.y = element_text(size = 5, angle = 90),
+        axis.title.y = element_text(size = 8, angle = 90),
         legend.title = element_blank(),
-        legend.text = element_text(size = 5, angle = 90, vjust = 0.5),
-        legend.position = "top"
-        )
+        legend.text = element_text(size = 8, angle = 90, vjust = 0.5),
+        legend.position = "top",
+        axis.ticks = element_line(colour = "black", size = 0.1))
 
-ggsave(plot = plot_topGo, "V_cardui_LR.pdf")
-plot_topGo
+ggsave(plot = plot_topGoAdult, "topGOAdult_BP.pdf")
+plot_topGoAdult
 ```
 
+
+## KEGG enrichment test
+
+```{r}
+
+### KEGG data prep
+
+# get the necessary information from the eggNOG output file
+fun_ann2 <- read.csv(file ="/Users/dshipilina/GitHub/VanessaExpression/vcard.func.annot.csv",header = FALSE)
+
+#get columns 1 (query) and 9 (KO terms)
+kegg_data2 <- fun_ann2[c(1,13)]
+kegg_data2
+
+# clean up by removing the "ko:" in front of every KO term
+kegg_data2$KEGG.KO <- kegg_data2$V13
+kegg_data2$Query <- gsub( "-RA", "", as.character(kegg_data2$V1))
+kegg_data2
+
+# expand, since some genes/proteins will have multiple assigned KO terms
+kegg2 <- data.table(kegg_data2)
+kegg2 <- kegg2[, list(KEGG.KO = unlist(strsplit(KEGG.KO, ","))), by = Query]
+kegg2_final <- kegg2[,c(2,1)]
+kegg2_final
+
+# select the needed columns
+#kegg_final <- kegg[,c(2,1)]
+
+# finally you need a list of gene/protein names of interest (only the     # identifiers). Here, this is called protein_ids. It can be a vector or a # column in a data.frame. This can be a list of differentially expressed   # genes or the genes present in a cluster of module that is experimentall # interesting to you.
+```
+
+
+```{r}
+
+#special_genesLRTHDLD <- c(special_genesLTR105,special_genesLTR305)
+#genesLRTHDLD <- sort(special_genesLRTHDLD, decreasing = TRUE)
+#genesLRTHDLD <- genesLRTHDLD[!duplicated(genesLRTHDLD)]
+
+cand_adult_all_load <- read.csv(file ="/Users/dshipilina/GitHub/VanessaExpression/cand_genes_adult_topGO.tsv",head=FALSE, sep=";")
+cand_adult_all_load[-1,]
+
+nrow(kegg2_final[- grep("map", kegg2_final$KEGG.KO),])
+kegg_KOterms <- kegg2_final[- grep("map", kegg2_final$KEGG.KO),]
+
+#,header = FALSE)
+#write.csv(cand_adult_all,file="cand_genes_adult_topGO.tsv",row.names = F)
+
+enr_resAdult <- enricher(cand_adult_all_load[-1,], TERM2GENE=kegg_KOterms, pvalueCutoff = 0.05, pAdjustMethod = "fdr", qvalueCutoff = 0.2, minGSSize = 1)
+enr_resAdult$ID
+#enr_res2$ID
+
+# write the results of the analysis
+write.table(enr_resAdult, file = "enr_resAdult.csv") # write table
+
+# make a simple dot plot of the results and save it as a .tiff file
+tiff(file="KO_dotplotAdult.tiff",width=6, height=4, units="in", res=1200)
+dotplot(enr_resAdult, showCategory=30)
+dev.off()
+```

@@ -361,3 +361,28 @@ cp run_rnaseq_HDLD_resume1.slurm run_rnaseq_HDLD_resume2.slurm
 
 #all finished
 #uploading th second set
+
+#Designing new experiment
+Group	Stage	Head	M/F	Abdomen	M/F	Tot
+HDAL	III	4	-/-	3	-/-	7
+HDAL	V	4	-/-	4	-/-	8
+HDAL	P	8	4/4	8	4/4	16
+HDAL	A	5	2/3	5	2/3	10
+#
+HDLI	III	4(3)-/-	4(3) -/- 8(6)
+HDLI	V	4	-/-	4	-/-	8
+HDLI	P	7	4/3	8	4/4	15
+HDLI	A	4	2/2	3	2/1	7
+#
+LDAL	III	4(3)	-/-	4	-/-	8(7)
+LDAL	V	4	-/-	4	-/-	8
+LDAL	P	8	4/4	7	3/4	15
+LDAL	A	8	4/4	6	3/3	14
+#
+AL	A	4	-	5	-	9
+LI	A	5	-	5	-	10
+
+HD=High density
+LD=Low density
+AL=Ad libitum
+LI=Limited food

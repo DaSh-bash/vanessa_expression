@@ -1,5 +1,5 @@
 Group	Stage	Head	M/F	Abdomen	M/F	Tot
-HDAL	III	4	-/-	3	-/-	7
+HDAL	III	4	-/-	3(2)	-/-	7(6)
 HDAL	V	4	-/-	4	-/-	8
 HDAL	P	8	4/4	8	4/4	16
 HDAL	A	5	2/3	5	2/3	10
