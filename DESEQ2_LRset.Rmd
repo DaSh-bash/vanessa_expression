@@ -927,7 +927,7 @@ adul_resultFisher_weight01 <- runTest(GO_dataAdult_BP, algorithm = "weight01", s
 
 allGO = usedGO(object = GO_dataAdult_BP)
 allResAdult_BP <- GenTable(GO_dataAdult_BP, 
-                   weight01Fisher = BP_resultFisher_weight01, 
+                   weight01Fisher = adul_resultFisher_weight01, 
                    orderBy = "weight01Fisher", 
                    ranksOf = "weight01Fisher", 
                    topNodes = length(allGO),
@@ -1040,3 +1040,20 @@ tiff(file="KO_dotplotAdult.tiff",width=6, height=4, units="in", res=1200)
 dotplot(enr_resAdult, showCategory=30)
 dev.off()
 ```
+
+Overlap of terms
+
+```{r}
+enr_resAdult$ID
+joint_keggs <- kegg_KOterms[is.element(kegg_KOterms$Query,cand_adult_all_load[-1,]),]
+joint_keggs_table <- table(joint_keggs$Query,joint_keggs$KEGG.KO)
+#joint_keggs_table$total <- rowSums(joint_keggs_table[ , c(1,17)])
+joint_keggs_table
+```
+
+```{r}
+retinol_pathway_genes<-kegg2_final[grep("ko00830", kegg2_final$KEGG.KO),]
+retinol_pathway_genes
+functional_annotation[is.element(functional_annotation$GeneID,retinol_pathway_genes$Query),]
+```
+

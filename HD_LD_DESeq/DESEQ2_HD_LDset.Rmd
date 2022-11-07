@@ -8,6 +8,8 @@ library("dplyr")
 library("clusterProfiler")
 library("enrichplot")
 library("data.table")
+library(DEGreport)
+library(DESeq2)
 ```
 
 
@@ -2094,6 +2096,532 @@ plot_topGoLTR_over=ggplot(topGOLTR_over, aes(x=reorder(GO_descr, -Significant), 
 ggsave(plot = plot_topGoLTR_over, "LTR_over.pdf")
 plot_topGoLTR_over
 ```
+
+
+## HDAL vs HDLI - LTR
+### Data prep
+```{r}
+colDataLTRLIhe<-colDataHDLD[colDataHDLD$tissue == "H", ]
+colDataLTRLIhe<-colDataLTRLIhe[colDataLTRLIhe$condition == "HDAL" | colDataLTRLIhe$condition == "HDLI", ]
+#colDataLTR1<-colDataHDLD[colDataHDLD$condition == "LDAL", ]#selecting head samples only
+colDataLTRLIhe
+
+
+##Removing sex information
+colDataLTRLIhe$devstage <- substr(colDataLTRLIhe$stage, 1, 1)
+#colDataLTR1$devstage<-gsub("I","III",as.character(colDataLTR1$devstage))
+colDataLTRLIhe$devstage<-gsub("I","1-instarIII",as.character(colDataLTRLIhe$devstage))
+colDataLTRLIhe$devstage<-gsub("V","2-instarV",as.character(colDataLTRLIhe$devstage))
+colDataLTRLIhe$devstage<-gsub("P","3-pupa",as.character(colDataLTRLIhe$devstage))
+colDataLTRLIhe$devstage<-gsub("A","4-adult",as.character(colDataLTRLIhe$devstage))
+colDataLTRLIhe$devstage <- as.factor(colDataLTRLIhe$devstage)  
+
+##Selecting count data
+#colDataJ$devstage
+#dim(colDataLTR1)
+colDataLTRLIhe<-colDataLTRLIhe[!(colDataLTRLIhe$sample == "HDLI_III_A_3" | colDataLTRLIhe$sample == "LDAL_III_H_3" | colDataLTRLIhe$sample == "HDLI_III_H_3" | colDataLTRLIhe$sample == "LDAL_ADMB_H_3" | colDataLTRLIhe$sample == "HDAL_PMB_H_1"),] #removing low quality samples only
+dim(colDataLTRLIhe)
+
+##Selecting count data
+sample_namesLRTLIhe<-colDataLTRLIhe$sample
+countLRTLIhe<-countHDLD[,c(sample_namesLRTLIhe)]
+
+head(countLRTLIhe)
+head(colDataLTRLIhe)
+
+
+
+colDataLTRLIab<-colDataHDLD[colDataHDLD$tissue == "A", ]
+colDataLTRLIab<-colDataLTRLIab[colDataLTRLIab$condition == "HDAL" | colDataLTRLIab$condition == "HDLI", ]
+#colDataLTR1<-colDataHDLD[colDataHDLD$condition == "LDAL", ]#selecting head samples only
+colDataLTRLIab
+
+
+##Removing sex information
+colDataLTRLIab$devstage <- substr(colDataLTRLIab$stage, 1, 1)
+#colDataLTR1$devstage<-gsub("I","III",as.character(colDataLTR1$devstage))
+colDataLTRLIab$devstage<-gsub("I","1-instarIII",as.character(colDataLTRLIab$devstage))
+colDataLTRLIab$devstage<-gsub("V","2-instarV",as.character(colDataLTRLIab$devstage))
+colDataLTRLIab$devstage<-gsub("P","3-pupa",as.character(colDataLTRLIab$devstage))
+colDataLTRLIab$devstage<-gsub("A","4-adult",as.character(colDataLTRLIab$devstage))
+colDataLTRLIab$devstage <- as.factor(colDataLTRLIab$devstage)  
+
+##Selecting count data
+#colDataJ$devstage
+#dim(colDataLTR1)
+colDataLTRLIab<-colDataLTRLIab[!(colDataLTRLIab$sample == "HDLI_III_A_3" | colDataLTRLIab$sample == "LDAL_III_H_3" | colDataLTRLIab$sample == "HDLI_III_H_3" | colDataLTRLIab$sample == "LDAL_ADMB_H_3" | colDataLTRLIab$sample == "HDAL_PMB_H_1"),] #removing low quality samples only
+dim(colDataLTRLIab)
+
+##Selecting count data
+sample_namesLRTLIab<-colDataLTRLIab$sample
+countLRTLIab<-countHDLD[,c(sample_namesLRTLIab)]
+
+head(countLRTLIab)
+head(colDataLTRLIab)
+
+```
+
+
+### DESeq
+
+```{r}
+ddsLTRLIab <- DESeqDataSetFromMatrix(countData=countLRTLIab, colData =colDataLTRLIab, design = ~family + devstage + condition + condition:devstage)
+
+#Basic filtering
+keep <- rowSums(counts(ddsLTRLIab)) >= 10
+ddsLTRLIab <- ddsLTRLIab[keep,]
+ddsLTRLIab
+
+ddsLTRLIab <- DESeq(ddsLTRLIab, test = "LRT", reduced = ~family + devstage + condition)   
+
+resLTRLIab <- results(ddsLTRLIab, alpha=0.05)
+summary(resLTRLIab)
+resLTRLIab[order(resLTRLIab$padj),]
+
+```
+
+
+```{r}
+ddsLTRLIhe <- DESeqDataSetFromMatrix(countData=countLRTLIhe, colData =colDataLTRLIhe, design = ~family + devstage + condition + condition:devstage)
+
+#Basic filtering
+keep <- rowSums(counts(ddsLTRLIhe)) >= 10
+ddsLTRLIhe <- ddsLTRLIhe[keep,]
+ddsLTRLIhe
+
+ddsLTRLIhe <- DESeq(ddsLTRLIhe, test = "LRT", reduced = ~family + devstage + condition)   
+
+resLTRLIhe <- results(ddsLTRLIhe, alpha=0.05)
+summary(resLTRLIhe)
+resLTRLIhe[order(resLTRLIhe$padj),]
+
+```
+
+```{r}
+summary(resLTRLIhe)
+resLTRLIhe[order(resLTRLIhe),]
+resLTRLIhe<-na.omit(resLTRLIhe)
+resLTRLIhe <- resLTRLIhe[resLTRLIhe$padj <= 0.05, ]
+
+#LTRLIhecand<- functional_annotation[is.element(functional_annotation$GeneID,c(special_genesLTRLIhe)),]
+#write.csv(LTRLIhecand,file="LTRLIhecand.tsv",row.names=T)
+
+summary(resLTRLIab)
+resLTRLIab[order(resLTRLIab),]
+resLTRLIab<-na.omit(resLTRLIab)
+resLTRLIab <- resLTRLIab[resLTRLIab$padj <= 0.05, ]
+
+#LTRLIabcand<- functional_annotation[is.element(functional_annotation$GeneID,c(special_genesLTRLIab)),]
+#write.csv(LTRLIabcand,file="LTRLIabcand.tsv",row.names=T)
+```
+
+### Candidate genes
+```{r}
+par(mfrow=c(2,3))
+for (x in row.names(resLTRLIhe)) {
+  plotCounts(ddsLTRLIhe, gene=x, intgroup="devstage")
+}
+```
+
+```{r}
+#Manually selected genes
+
+special_genesLTRLIhe<-c("Vcard_DToL18855","Vcard_DToL00604","Vcard_DToL00349","Vcard_DToL15515")
+
+par(mfrow=c(1,2))
+for (x in special_genesLTRLIhe) {
+  plotCounts(ddsLTRLIhe, gene=x, intgroup="devstage")
+}
+
+functional_annotation[is.element(functional_annotation$GeneID,c(special_genesLTRLIhe)),]
+```
+
+
+```{r}
+par(mfrow=c(2,3))
+for (x in row.names(resLTRLIab)) {
+  plotCounts(ddsLTRLIab, gene=x, intgroup="devstage")
+}
+
+
+```
+
+
+```{r}
+#Manually selected genes
+
+special_genesLTRLIab<-c("Vcard_DToL00940","Vcard_DToL04878","Vcard_DToL07249","Vcard_DToL14888","Vcard_DToL10578","Vcard_DToL08494")
+special_genesLTRLIab<-c("Vcard_DToL00940","Vcard_DToL04878","Vcard_DToL14888","Vcard_DToL08494")
+
+par(mfrow=c(1,2))
+for (x in special_genesLTRLIab) {
+  plotCounts(ddsLTRLIab, gene=x, intgroup="devstage")
+}
+
+functional_annotation[is.element(functional_annotation$GeneID,c(special_genesLTRLIab)),]
+```
+
+
+```{r}
+length(row.names(resLTRLIhe))
+length(row.names(resLTRLIab))
+length(intersect(row.names(resLTRLIhe),row.names(resLTRLIab)))
+```
+
+
+
+
+
+
+### Pattern analysis
+
+
+```{r}
+#maLIab = assay(rlog(ddsLTRLIab))[row.names(resLTRLIab),]
+pattLIab <- degPatterns(maLIab, metadata = colDataLTRLIab,time = "devstage",col="condition")
+pattLIab
+```
+
+```{r}
+maLIhe = assay(rlog(ddsLTRLIhe))[row.names(resLTRLIhe),]
+degPatterns(maLIhe, metadata = colDataLTRLIhe,time = "devstage",col="condition")
+
+```
+
+### GOterm analysis 
+
+```{r}
+cand_LRTLI_all <- c(row.names(resLTRLIhe),row.names(resLTRLIab))
+write.csv(cand_LRTLI_all,file="cand_LRTLI_all_topGO.tsv",row.names = F)
+```
+
+
+```{bash}
+#tail -n +2 hef2topDowngenenames.tsv > hef2topDowngenename.tsv
+#tail -n +2 hef2topUpgenenames.tsv > hef2topUpgenename.tsv
+
+#cat hef2topDowngenename.tsv hef2topUpgenename.tsv > LRhefgenename.tsv
+
+tail -n +2 cand_LRTLI_all_topGO.tsv | sed 's/\"//' | sed 's/\"//' | awk '{print $1"-RA"}' > cand_LRTLI_all_topGO_clean.tsv
+```
+
+
+```{r}
+candidate_genesLRTLI <- read.table("cand_LRTLI_all_topGO_clean.tsv", header = F)
+#candidate_genesLRTLI <- candidate_genesLRTLI[!duplicated(candidate_genesLRTLI)]
+colnames(candidate_genesLRTLI) <- "geneid"
+#cand_adult_all
+#head(candidate_genes)
+
+candidate_genesLRTLI <- as.character(candidate_genesLRTLI$geneid)
+geneListLRTLI <- factor(as.integer(geneNames %in% candidate_genesLRTLI))
+names(geneListLRTLI) <- geneNames
+head(geneListLRTLI)
+
+##Biological function
+#create the topGOdata object
+GO_dataLRTLI_BP <- new("topGOdata", 
+               ontology="BP", 
+               allGenes=geneListLRTLI, 
+               annot=annFUN.gene2GO, 
+               gene2GO=geneID2GO, 
+               nodeSize=1)
+```
+
+
+
+```{r}
+LRTLI_resultFisher_weight01 <- runTest(GO_dataLRTLI_BP, algorithm = "weight01", statistic = "fisher")
+
+allGOLRTLI = usedGO(object = GO_dataLRTLI_BP)
+allResLRTLI_BP <- GenTable(GO_dataLRTLI_BP, 
+                   weight01Fisher = LRTLI_resultFisher_weight01, 
+                   orderBy = "weight01Fisher", 
+                   ranksOf = "weight01Fisher", 
+                   topNodes = length(allGO),
+                   numChar=1000)
+
+allResLRTLI_BP$weight01Fisher <- as.numeric(allResLRTLI_BP$weight01Fisher)
+allResLRTLI_BP[allResLRTLI_BP$weight01Fisher<=0.05, ]
+
+allResLRTLI_BP$p_adj_fdr <- p.adjust(allResLRTLI_BP$weight01Fisher, method = "fdr")
+allResLRTLI_BP$p_adj_holm <- p.adjust(allResLRTLI_BP$weight01Fisher, method = "holm")
+allResLRTLI_BP$p_adj_bonferroni <- p.adjust(allResLRTLI_BP$weight01Fisher, method = "bonferroni")
+allResLRTLI_BP$p_adj_BH <- p.adjust(allResLRTLI_BP$weight01Fisher, method = "BH")
+
+allResLRTLI_BP
+
+```
+
+```{r}
+#allResLRTLI_BP
+topGOLRTLI_BP <- allResLRTLI_BP[allResLRTLI_BP$weight01Fisher<=0.01, ]
+nrow(allResLRTLI_BP[allResLRTLI_BP$weight01Fisher<=0.01, ])
+
+
+topGOLRTLI_BP$GO_descr <- paste(topGOLRTLI_BP$Term," (",topGOLRTLI_BP$GO.ID,")", sep = "")
+
+plot_topGoLRTLI=ggplot(topGOLRTLI_BP, aes(x=reorder(GO_descr, -Significant), y=Significant)) + geom_bar(stat="identity", fill="#512887") + 
+  theme(panel.background = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_blank(),
+        axis.line = element_line(size = 0.2, colour = "black"),
+        axis.text.x = element_text(size = 8, angle = 90, vjust = 0.5, hjust = 1),
+        axis.text.y = element_text(size = 8, angle = 90, hjust = 0.5),
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 8, angle = 90),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 8, angle = 90, vjust = 0.5),
+        legend.position = "top",
+        axis.ticks = element_line(colour = "black", size = 0.1))
+
+ggsave(plot = plot_topGoLRTLI, "topGOLRTLI_BP.pdf")
+plot_topGoLRTLI
+```
+
+### KEGG analysis
+
+```{r}
+
+#special_genesLRTHDLD <- c(special_genesLTR105,special_genesLTR305)
+#genesLRTHDLD <- sort(special_genesLRTHDLD, decreasing = TRUE)
+#genesLRTHDLD <- genesLRTHDLD[!duplicated(genesLRTHDLD)]
+
+#candidate_genesLRTLI <- read.table("cand_LRTLI_all_topGO.tsv", header = F)
+
+candidate_genesLRTLI_load <- read.csv(file ="cand_LRTLI_all_topGO.tsv",head=FALSE, sep=";")
+#candidate_genesLRTLI_load
+#candidate_genesLRTLI_load <- sort(candidate_genesLRTLI_load, decreasing = TRUE)
+
+nrow(kegg2_final[- grep("map", kegg2_final$KEGG.KO),])
+kegg_KOterms <- kegg2_final[- grep("map", kegg2_final$KEGG.KO),]
+
+#,header = FALSE)
+#write.csv(cand_adult_all,file="cand_genes_adult_topGO.tsv",row.names = F)
+
+enr_resLRTLI <- enricher(candidate_genesLRTLI_load[-1,], TERM2GENE=kegg_KOterms, pvalueCutoff = 0.05, pAdjustMethod = "fdr", qvalueCutoff = 0.2, minGSSize = 1)
+enr_resLRTLI$ID
+#enr_res2$ID
+
+# write the results of the analysis
+write.table(enr_resLRTLI, file = "enr_resLRTLI.csv") # write table
+
+# make a simple dot plot of the results and save it as a .tiff file
+tiff(file="KO_dotplotLRTLI.tiff",width=6, height=4, units="in", res=1200)
+dotplot(enr_resLRTLI, showCategory=30)
+dev.off()
+```
+
+
+# Strong treatment effects
+
+```{r}
+colDataLIhe<-colDataHDLD[colDataHDLD$tissue == "H", ]
+colDataLIhe<-colDataLIhe[colDataLIhe$condition == "HDAL" | colDataLIhe$condition == "HDLI", ]
+#colDataLTR1<-colDataHDLD[colDataHDLD$condition == "LDAL", ]#selecting head samples only
+colDataLIhe
+
+
+##Removing sex information
+colDataLIhe$devstage <- substr(colDataLIhe$stage, 1, 1)
+#colDataLTR1$devstage<-gsub("I","III",as.character(colDataLTR1$devstage))
+colDataLIhe$devstage<-gsub("I","1-instarIII",as.character(colDataLIhe$devstage))
+colDataLIhe$devstage<-gsub("V","2-instarV",as.character(colDataLIhe$devstage))
+colDataLIhe$devstage<-gsub("P","3-pupa",as.character(colDataLIhe$devstage))
+colDataLIhe$devstage<-gsub("A","4-adult",as.character(colDataLIhe$devstage))
+#colDataLTR1$devstage <- as.factor(colDataLTR1$devstage)  
+
+##Selecting count data
+#colDataJ$devstage
+#dim(colDataLTR1)
+colDataLIhe<-colDataLIhe[!(colDataLIhe$sample == "HDLI_III_A_3" | colDataLIhe$sample == "LDAL_III_H_3" | colDataLIhe$sample == "HDLI_III_H_3" | colDataLIhe$sample == "LDAL_ADMB_H_3" | colDataLIhe$sample == "HDAL_PMB_H_1"),] #removing low quality samples only
+dim(colDataLIhe)
+
+##Selecting count data
+sample_namesLIhe<-colDataLIhe$sample
+countLIhe<-countHDLD[,c(sample_namesLIhe)]
+
+head(countLIhe)
+head(colDataLIhe)
+
+
+
+```
+
+```{r}
+ddsLIhe <- DESeqDataSetFromMatrix(countData=countLIhe, colData =colDataLIhe, design = ~family + devstage + condition)
+
+#Basic filtering
+keep <- rowSums(counts(ddsLIhe)) >= 10
+ddsLIhe <- ddsLIhe[keep,]
+ddsLIhe
+
+
+ddsLIhe <- DESeq(ddsLIhe)   
+
+
+resLIhe <- results(ddsLIhe, alpha=0.05)
+summary(resLIhe)
+resLIhe[order(resLIhe$padj),]
+
+```
+
+
+```{r}
+colDataLIab<-colDataHDLD[colDataHDLD$tissue == "A", ]
+colDataLIab<-colDataLIab[colDataLIab$condition == "HDAL" | colDataLIab$condition == "HDLI", ]
+#colDataLTR1<-colDataHDLD[colDataHDLD$condition == "LDAL", ]#selecting head samples only
+colDataLIhe
+
+
+##Removing sex information
+colDataLIab$devstage <- substr(colDataLIab$stage, 1, 1)
+#colDataLTR1$devstage<-gsub("I","III",as.character(colDataLTR1$devstage))
+colDataLIab$devstage<-gsub("I","1-instarIII",as.character(colDataLIab$devstage))
+colDataLIab$devstage<-gsub("V","2-instarV",as.character(colDataLIab$devstage))
+colDataLIab$devstage<-gsub("P","3-pupa",as.character(colDataLIab$devstage))
+colDataLIab$devstage<-gsub("A","4-adult",as.character(colDataLIab$devstage))
+#colDataLTR1$devstage <- as.factor(colDataLTR1$devstage)  
+
+##Selecting count data
+#colDataJ$devstage
+#dim(colDataLTR1)
+colDataLIab<-colDataLIab[!(colDataLIab$sample == "HDLI_III_A_3" | colDataLIab$sample == "LDAL_III_H_3" | colDataLIab$sample == "HDLI_III_H_3" | colDataLIab$sample == "LDAL_ADMB_H_3" | colDataLIab$sample == "HDAL_PMB_H_1"),] #removing low quality samples only
+dim(colDataLIab)
+
+##Selecting count data
+sample_namesLIab<-colDataLIab$sample
+countLIab<-countHDLD[,c(sample_namesLIab)]
+
+head(countLIab)
+head(colDataLIab)
+
+
+
+```
+
+```{r}
+ddsLIab <- DESeqDataSetFromMatrix(countData=countLIab, colData =colDataLIab, design = ~family + devstage + condition)
+
+#Basic filtering
+keep <- rowSums(counts(ddsLIab)) >= 10
+ddsLIab <- ddsLIab[keep,]
+ddsLIab
+
+
+ddsLIab <- DESeq(ddsLIab)   
+
+
+resLIab <- results(ddsLIab, alpha=0.05)
+summary(resLIab)
+resLIab[order(resLIab$padj),]
+
+```
+
+
+
+```{r}
+
+resLIhe05 <- resLIhe[resLIhe$padj <= 0.05, ]
+
+par(mfrow=c(2,3))
+for (x in row.names(resLIhe05)) {
+  plotCounts(ddsLIhe, gene=x, intgroup="condition")
+}
+
+functional_annotation[is.element(functional_annotation$GeneID,row.names(resLIhe05)),]
+
+resLIab<-na.omit(resLIab)
+resLIab05 <- resLIab[resLIab$padj <= 0.05, ]
+
+par(mfrow=c(2,3))
+for (x in row.names(resLIab05)) {
+  plotCounts(ddsLIab, gene=x, intgroup="condition")
+}
+
+functional_annotation[is.element(functional_annotation$GeneID,row.names(resLIab05)),]
+
+
+```
+
+
+# Gender effect
+
+```{r}
+colDataSex<-colDataHDLD[colDataHDLD$tissue == "H", ]
+colDataSex<-colDataSex[colDataSex$condition == "HDAL" | colDataSex$condition == "HDLI", ]
+#colDataLTR1<-colDataHDLD[colDataHDLD$condition == "LDAL", ]#selecting head samples only
+colDataSex
+
+
+##Removing sex information
+colDataSex$devstage <- substr(colDataSex$stage, 1, 1)
+#colDataLTR1$devstage<-gsub("I","III",as.character(colDataLTR1$devstage))
+colDataSex$devstage<-gsub("I","instarIII",as.character(colDataSex$devstage))
+colDataSex$devstage<-gsub("V","instarV",as.character(colDataSex$devstage))
+colDataSex$devstage<-gsub("P","pupa",as.character(colDataSex$devstage))
+colDataSex$devstage<-gsub("A","adult",as.character(colDataSex$devstage))
+
+
+##Selecting count data
+#colDataJ$devstage
+#dim(colDataLTR1)
+colDataSex<-colDataSex[!(colDataSex$sample == "HDLI_III_A_3" | colDataSex$sample == "LDAL_III_H_3" | colDataSex$sample == "HDLI_III_H_3" | colDataSex$sample == "LDAL_ADMB_H_3" | colDataSex$sample == "HDAL_PMB_H_1"),] #removing low quality samples only
+dim(colDataSex)
+
+
+colDataSex$sex <- c("F","F","F","M","M","0","0","0","0","F","F","F","F","M","M","M","0","0","0","0","F","F","M","M","0","0","0","F","F","F","M","M","M","M","0","0","0","0")
+
+colDataSex<-colDataSex[colDataSex$sex == "M" | colDataSex$sex == "F", ]
+
+colDataSex
+
+##Selecting count data
+sample_namesSex<-colDataSex$sample
+countSex<-countHDLD[,c(sample_namesSex)]
+
+head(countSex)
+head(colDataSex)
+
+
+
+```
+
+```{r}
+
+ddsSex <- DESeqDataSetFromMatrix(countData=countSex, colData =colDataSex, design = ~family + devstage + sex + sex:condition)
+
+#Basic filtering
+keep <- rowSums(counts(ddsSex)) >= 10
+ddsSex <- ddsSex[keep,]
+ddsSex
+
+ddsSex <- DESeq(ddsSex)   
+
+resSex<- results(ddsSex, alpha=0.05)
+summary(resSex)
+resSex[order(resSex$padj),]
+
+```
+
+
+```{r}
+resSex<-na.omit(resSex)
+resSex05 <- resSex[resSex$padj <= 0.05, ]
+
+par(mfrow=c(2,3))
+for (x in row.names(resSex05)) {
+  plotCounts(ddsSex, gene=x, intgroup="condition")
+}
+
+par(mfrow=c(2,3))
+for (x in row.names(resSex05)) {
+  plotCounts(ddsSex, gene=x, intgroup="sex")
+}
+
+```
+
+
 
 
 

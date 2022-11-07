@@ -1,0 +1,46 @@
+Abdomen UP regulated in limited host plant,,,,
+,GeneID,Function,GeneName,Func_Categ
+135,Vcard_DToL04177,"Mitochondrial carrier required for the biosynthesis of heme, possibly by facilitating 5-aminolevulinate (ALA) production. May act by importing glycine into mitochondria or by exchanging glycine for ALA across the mitochondrial inner membrane",SLC25A38,Mito_carr
+222,Vcard_DToL04287,Enoyl-(Acyl carrier protein) reductase,-,adh_short
+432,Vcard_DToL04556,GMC oxidoreductase,-,"GMC_oxred_C,GMC_oxred_N"
+598,Vcard_DToL07667,Ion channel,KCNK18,Ion_trans_2
+817,Vcard_DToL07962,N-acetylmuramoyl-L-alanine amidase,PGRPLB,Amidase_2
+819,Vcard_DToL07964,Ami_2,PGRPLB,Amidase_2
+835,Vcard_DToL07986,transporter activity. It is involved in the biological process described with transport,-,CRAL_TRIO
+995,Vcard_DToL08184,Adenosine/AMP deaminase N-terminal,CECR1,"A_deaminase,A_deaminase_N"
+1046,Vcard_DToL08246,Enoyl-(Acyl carrier protein) reductase,DHRS11,adh_short
+1627,Vcard_DToL16441,-,-,-
+1697,Vcard_DToL16530,-,-,-
+2132,Vcard_DToL18116,C2H2-type zinc finger,-,"zf-C2H2,zf-C2H2_6"
+3437,Vcard_DToL08808,-,-,-
+3555,Vcard_DToL08950,C-type lectin (CTL) or carbohydrate-recognition domain (CRD),-,Lectin_C
+3943,Vcard_DToL16817,Sugar (and other) transporter,-,Sugar_tr
+4134,Vcard_DToL17056,Enoyl-(Acyl carrier protein) reductase,-,adh_short
+4135,Vcard_DToL17057,Enoyl-(Acyl carrier protein) reductase,-,adh_short
+4173,Vcard_DToL07064,Ami_2,PGLYRP1,Amidase_2
+4181,Vcard_DToL07084,Domain of unknown function (DUF4495),KIAA0825,DUF4495
+4613,Vcard_DToL07626,"Tubulin is the major constituent of microtubules. It binds two moles of GTP, one at an exchangeable site on the beta chain and one at a non-exchangeable site on the alpha chain",-,"Tubulin,Tubulin_C"
+4768,Vcard_DToL11994,Beta-eliminating lyase,GADL1,Pyridoxal_deC
+4866,Vcard_DToL12126,Diacylglycerol kinase accessory domain (presumed),DGKE,"C1_1,DAGK_acc,DAGK_cat"
+5161,Vcard_DToL12491,Aminotransferase class I and II,GPT2,Aminotran_1_2
+5896,Vcard_DToL12850,"Hemocyanin, all-alpha domain",-,"Hemocyanin_C,Hemocyanin_M,Hemocyanin_N"
+6172,Vcard_DToL00065,Nucleoside H+ symporter,-,"MFS_1_like,Nuc_H_symport"
+6807,Vcard_DToL09834,KR domain,-,adh_short
+7153,Vcard_DToL18627,Cytochrome P450,CYP307A1,p450
+7589,Vcard_DToL15486,Carboxylesterase family,CES2,COesterase
+7694,Vcard_DToL15617,Gloverin-like protein,-,Gloverin
+7697,Vcard_DToL15621,"Attacin, C-terminal region",AttA,"Attacin_C,Attacin_N"
+7702,Vcard_DToL15624,Gloverin-like protein,-,Gloverin
+9137,Vcard_DToL00987,Trypsin-like serine protease,-,Trypsin
+9328,Vcard_DToL01221,MFS/sugar transport protein,MFSD12,MFS_2
+9526,Vcard_DToL01461,Domain of unknown function (DUF4773),-,DUF4773
+10157,Vcard_DToL09601,4-hydroxyphenylpyruvate dioxygenase activity. It is involved in the biological process described with oxidation-reduction process,HPD,Glyoxalase
+10369,Vcard_DToL05597,-,-,-
+10724,Vcard_DToL06023,Amino acid permease,SLC7A6,AA_permease_2
+11036,Vcard_DToL13220,Insect cuticle protein,-,Chitin_bind_4
+11445,Vcard_DToL13737,Leucine Rich repeat,-,LRR_8
+12277,Vcard_DToL06636,Alpha-lactalbumin / lysozyme C,-,Lys
+12674,Vcard_DToL17175,"Transcriptional regulator, SIX1, N-terminal SD domain",SIX4,"Homeobox,SIX1_SD"
+13721,Vcard_DToL05345,Trypsin Inhibitor like cysteine rich domain,-,TIL
+13882,Vcard_DToL01847,Glutamine amidotransferase domain,PPAT,"GATase_6,Pribosyltran"
+13883,Vcard_DToL01848,Glutamine amidotransferase domain,PPAT,"GATase_6,Pribosyltran"
