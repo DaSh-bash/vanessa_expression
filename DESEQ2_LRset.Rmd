@@ -10,6 +10,7 @@ library(apeglm)
 library("clusterProfiler")
 library("enrichplot")
 library("data.table")
+library(GeneOverlap)
 ```
 
 
@@ -291,21 +292,21 @@ functional_annotation
 ```{r}
 res05abf<-na.omit(res05abf)
 res05abftopUp <- res05abf[res05abf$padj <= 0.05 & res05abf$log2FoldChange > 2, ]
-res05abftopDown <- res05abf[res05abf$padj <= 0.05 & res05abf$log2FoldChange < 2, ]
+res05abftopDown <- res05abf[res05abf$padj <= 0.05 & res05abf$log2FoldChange < -2, ]
 length(row.names(res05abftopUp))
 length(row.names(res05abftopDown))
 
 
 res05abftopUpfun <-functional_annotation[is.element(functional_annotation$GeneID,c(row.names(res05abftopUp))),]
-write.csv(res05abftopUpfun,file="cand_genes_adult_ab_topUp.tsv",row.names=T)
+write.csv(res05abftopUpfun,file="cand_genes_adult_ab_topUp2.tsv",row.names=T)
 res05abftopDownfun <- functional_annotation[is.element(functional_annotation$GeneID,c(row.names(res05abftopDown))),]
-write.csv(res05abftopDownfun,file="cand_genes_adult_ab_topDown.tsv",row.names=T)
+write.csv(res05abftopDownfun,file="cand_genes_adult_ab_topDown2.tsv",row.names=T)
 
-#res05abftopUpgenenames <- row.names(res05abftopUp)
-#res05abftopUpgenenames
+res05abftopUpgenenames <- row.names(res05abftopUp)
+write.csv(res05abftopUpgenenames,file="res05abftopUpgenenames.tsv",row.names=T)
 
-#res05abftopDowngenenames <- row.names(res05abftopDown)
-#res05abftopDowngenenames
+res05abftopDowngenenames <- row.names(res05abftopDown)
+write.csv(res05abftopDowngenenames,file="res05abftopDowngenenames.tsv",row.names=T)
 
 ```
 
@@ -514,6 +515,13 @@ head(resLRhef2)
 summary(resLRhef2)
 ```
 
+Setting up p-value to 0.05
+```{r}
+res05hef2 <- results(ddsLRhef2, alpha=0.05)
+summary(res05hef2)
+```
+
+
 Visual exploration of the results
 
 We use first 100 significant genes to build a PCA plot:
@@ -578,7 +586,7 @@ grep "Vcard_DToL03156" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
 
 Setting up p-value to 0.05
 ```{r}
-res05hef2 <- results(ddsLRhef2, alpha=0.05)
+res05hef2 <- results(ddsLRhef2, alpha=0.05) #, na.rm=TRUE)
 summary(res05hef2)
 ```
 
@@ -599,7 +607,7 @@ Selecting upregulated genes of interest based on arbitrary (stringent) criteria
 #res05hef2[order(res05hef2$padj),]
 res05hef2<-na.omit(res05hef2)
 res05hef2topUp <- res05hef2[res05hef2$padj <= 0.05 & res05hef2$log2FoldChange > 2, ]
-res05hef2topDown <- res05hef2[res05hef2$padj <= 0.05 & res05hef2$log2FoldChange < 2, ]
+res05hef2topDown <- res05hef2[res05hef2$padj <= 0.05 & res05hef2$log2FoldChange < -2, ]
 length(row.names(res05hef2topUp))
 length(row.names(res05hef2topDown))
 
@@ -611,9 +619,9 @@ res05hef2topDowngenenames
 
 
 res05hef2topUpfun <-functional_annotation[is.element(functional_annotation$GeneID,c(row.names(res05hef2topUp))),]
-write.csv(res05hef2topUpfun,file="cand_genes_adult_he_topUp.tsv",row.names=T)
+write.csv(res05hef2topUpfun,file="cand_genes_adult_he_topUp2.tsv",row.names=T)
 res05hef2topDownfun <- functional_annotation[is.element(functional_annotation$GeneID,c(row.names(res05hef2topDown))),]
-write.csv(res05hef2topDownfun,file="cand_genes_adult_he_topDown.tsv",row.names=T)
+write.csv(res05hef2topDownfun,file="cand_genes_adult_he_topDown2.tsv",row.names=T)
 
 ```
 
@@ -710,6 +718,22 @@ comm -12 LRabtopUpgenenames.tsv CandidateGenesExpandedOrthogroups.tsv
 ```
 
 
+Trying genes overlap
+```{r}
+#gs.RNASeq <- 18860
+allgenes_count <- 18860
+go.obj <- newGeneOverlap(row.names(res05hef2topDown),
+                          row.names(res05abftopDown),
+                          genome.size=allgenes_count)
+
+
+go.obj
+
+go.obj <- testGeneOverlap(go.obj)
+go.obj
+```
+
+
 
 ## TopGO analysis
 
@@ -747,7 +771,7 @@ write.csv(x,file="hef2topUpgenenames.tsv",row.names=F)
 
 ```{r}
 cand_adult_all <- c(row.names(res05hef2topUp),row.names(res05hef2topDown),row.names(res05abftopDown),row.names(res05abftopUp))
-#write.csv(cand_adult_all,file="cand_genes_adult_topGO.tsv",row.names = F)
+write.csv(cand_adult_all,file="cand_genes_adult_topGO.tsv",row.names = F)
 ```
 
 
@@ -784,27 +808,8 @@ GO_dataAdult_BP <- new("topGOdata",
 
 
 
-```{r}
-candidate_genes <- read.table("resLTR105filtr.tsv", header = F)
-colnames(candidate_genes) <- "geneid"
-#head(candidate_genes)
 
-candidate_genes <- as.character(candidate_genes$geneid)
-geneList <- factor(as.integer(geneNames %in% candidate_genes))
-names(geneList) <- geneNames
-#head(geneList)
-
-##Biological function
-#create the topGOdata object
-GO_dataLTR_BP <- new("topGOdata", 
-               ontology="BP", 
-               allGenes=geneList, 
-               annot=annFUN.gene2GO, 
-               gene2GO=geneID2GO, 
-               nodeSize=1)
 ```
-
-```{r}
 #read the list of genes of interest 
 #"when only a list of interesting genes is provided, 
 #the user can use only tests statistics that are based on gene counts, 
@@ -903,13 +908,10 @@ allRes_all_comb <- rbind(allRes_BP[allRes_BP$weight01Fisher<=0.05, ], allRes_CC[
 
 return(allRes_all_comb)
 
-}
+
 ```
 
 
-```{r}
-allRes_all_comb<-Dasha_topGO("LRhef2genenames.tsv")
-```
 
 
 
@@ -956,6 +958,155 @@ allResAdult_BP$p_adj_BH <- p.adjust(allResAdult_BP$weight01Fisher, method = "BH"
 allResAdult_BP
 ```
 
+
+Adding gene names
+```{r}
+allResAdult_BP$genes <- sapply(allResAdult_BP$GO.ID,
+                          function(x)
+                          {
+                              genes_sel <- genesInTerm(GO_dataAdult_BP, x)
+                              genes_sel[[1]][genes_sel[[1]] %in% candidate_genes]
+                          })
+allResAdult_BP$genes <- vapply(allResAdult_BP$genes, paste, collapse =",", character(1L))
+
+topGOAdult_BP <- allResAdult_BP[allResAdult_BP$weight01Fisher<=0.01, ]
+```
+
+```{r}
+#topGOAdult_BP
+
+data2 <- data.frame(x1 = 1:5,    # Create example data
+                   x2 = 6:10,
+                   x3 = 11:15)
+
+for(i in 1:nrow(data2)) {       # for-loop over rows
+  data2[i, ] <- data2[i, ] - 100
+}
+
+data2
+```
+
+```{r}
+topGOAdult_BPtst <- topGOAdult_BP
+
+for(i in 1:nrow(topGOAdult_BPtst)) {       # for-loop over rows
+  #topGOAdult_BPtst$Annotated[i] <- topGOAdult_BPtst$Annotated[i] + 100
+  parsed_genes<-unlist(strsplit(topGOAdult_BPtst$genes[i], ","))
+  #print(parsed_genes)
+  print(length(intersect(parsed_genes,res05hef2topUptest)))
+  topGOAdult_BPtst$abftopUp[i] <- length(intersect(parsed_genes,paste(res05abftopUpgenenames,"-RA", sep = "")))
+  topGOAdult_BPtst$abftopDown[i] <- length(intersect(parsed_genes,paste(res05abftopDowngenenames,"-RA", sep = "")))
+  topGOAdult_BPtst$hef2topUp[i] <- length(intersect(parsed_genes,paste(res05hef2topUpgenenames,"-RA", sep = "")))
+  topGOAdult_BPtst$hef2topDown[i] <- length(intersect(parsed_genes,paste(res05hef2topDowngenenames,"-RA", sep = "")))
+  #print(intersect(parsed_genes,res05hef2topUptest))
+}
+
+
+
+topGOAdult_BPtst$up_genes <- topGOAdult_BPtst$hef2topUp + topGOAdult_BPtst$abftopUp
+topGOAdult_BPtst$down_genes <- topGOAdult_BPtst$hef2topDown + topGOAdult_BPtst$abftopDown
+
+topGOAdult_BPtst
+
+#res05hef2topUp <- read.csv(file ="/Users/dshipilina/GitHub/VanessaExpression/cand_genes_adult_he_topUp2.tsv",header = FALSE)
+#res05hef2topUptest <- paste(res05hef2topUp$V2,"-RA", sep = "")
+#res05hef2topUptest
+
+
+```
+
+```{r}
+
+
+visual1 = data.frame(ISSUE_DATE=runif(100,2006,2008),COUNTED=runif(100,0,50))
+visual2 = data.frame(ISSUE_DATE=runif(100,2006,2008),COUNTED=runif(100,0,50))
+
+
+visuals = rbind(visual1,visual2)
+visuals$vis=c(rep("visual1",100),rep("visual2",100)) # 100 points of each flavour
+
+
+ggplot(visuals, aes(ISSUE_DATE,COUNTED,group=vis,col=vis)) + 
+   geom_point() + geom_smooth()
+```
+
+
+
+```{r}
+topGOAdult_BP
+#topGOAdult_BP$genes[c(row.names(res05hef2topUp))]
+topGOAdult_BP$genes[c("Vcard_DToL05597-RA,Vcard_DToL07962-RA,Vcard_DToL07964-RA")]
+
+
+#topGOAdult_BP$splt[6]<- unlist(strsplit(topGOAdult_BP$genes[6], ","))
+#topGOAdult_BP
+#unlist(strsplit(enr_resAdult$geneID[6], "/"))
+
+topGOAdult_BP
+write.csv(topGOAdult_BP,file="topGOAdult_BP.csv",row.names=T)
+```
+
+```{bash}
+#grep -o "Vcard_DToL09468-RA" topGOAdult_BP.tsv
+awk -F "\"" '{print $8,$9,$10}' topGOAdult_BP.tsv >  topGOAdult_BPprep.tsv
+awk -F "," '{print $0}' topGOAdult_BPprep.tsv
+grep "Vcard_DToL06760-RA" topGOAdult_BPprep.tsv || echo "no match" >&2
+```
+
+```{bash}
+
+while read i; do echo $i |grep -o -f "Vcard_DToL06760-RA"| wc -l;  done < topGOAdult_BPprp.csv
+
+```
+
+
+```{bash}
+while -r read p; do
+  echo "$p"
+  grep -c "Vcard_DToL06760-RA" p
+done <topGOAdult_BPprep.tsv
+```
+
+
+```{r}
+#df1 <- data.frame(x = seq(2, 8, by = 2),
+#                  y = seq(30, 15, by = -5))
+#df2 <- data.frame(x = seq(2, 8, by = 2),
+##                  y = seq(12, 24, by = 4))
+
+#ggplot(df1, aes(x, log(y))) + 
+#   geom_line() +
+##   geom_line(data = df2, color = "red") # re-define data and overwrite top layer
+
+
+dftop <- data.frame(matrix(ncol = 0, nrow = 43))
+dftop$GO.ID <- topGOAdult_BPtst$GO.ID
+dftop$GO_descr <- paste(topGOAdult_BPtst$Term," (",topGOAdult_BPtst$GO.ID,")", sep = "")
+dftop$Genes <- topGOAdult_BPtst$Significant
+dftop
+
+
+
+```
+
+
+
+```{r}
+#topGOAdult_BP <- allResAdult_BP[allResAdult_BP$weight01Fisher<=0.01, ]
+#nrow(allResAdult_BP[allResAdult_BP$weight01Fisher<=0.01, ])
+
+
+topGOAdult_BPtst$GO_descr <- paste(topGOAdult_BPtst$Term," (",topGOAdult_BPtst$GO.ID,")", sep = "")
+
+plot_topGoAdulttst=ggplot(topGOAdult_BPtst, aes(x=reorder(GO_descr, -Significant), y=up_genes)) + geom_bar(stat="identity", fill="#512887") 
+
+#plot_topGoAdulttst <- ggplot() + geom_bar(topGOAdult_BPtst, aes(x=GO_descr, y=Significant)) + geom_bar(topGOAdult_BPtst, aes(x=GO_descr, y=up_genes)) 
+
+#ggsave(plot = plot_topGoAdult, "topGOAdult_BP.pdf")
+plot_topGoAdulttst
+```
+
+
 ```{r}
 topGOAdult_BP <- allResAdult_BP[allResAdult_BP$weight01Fisher<=0.01, ]
 nrow(allResAdult_BP[allResAdult_BP$weight01Fisher<=0.01, ])
@@ -977,9 +1128,25 @@ plot_topGoAdult=ggplot(topGOAdult_BP, aes(x=reorder(GO_descr, -Significant), y=S
         legend.position = "top",
         axis.ticks = element_line(colour = "black", size = 0.1))
 
-ggsave(plot = plot_topGoAdult, "topGOAdult_BP.pdf")
+#ggsave(plot = plot_topGoAdult, "topGOAdult_BP.pdf")
 plot_topGoAdult
 ```
+```{r}
+#library("Rgraphviz")
+par(cex = 0.5)
+showSigOfNodes(GO_dataAdult_BP, score(adul_resultFisher_weight01), firstSigNodes = 43, useInfo ='all')
+printGraph(GO_dataAdult_BP, adul_resultFisher_weight01, firstSigNodes = 43, fn.prefix = "tGO", useInfo = "all", pdfSW = TRUE)
+```
+
+```{r}
+#library("Rgraphviz")
+par(cex = 0.5)
+showSigOfNodes(GO_dataAdult_BP, score(topGOAdult_BP$weight01Fisher), firstSigNodes = 20, useInfo ='all')
+#printGraph(GO_dataAdult_BP, adul_resultFisher_weight01, firstSigNodes = 20, fn.prefix = "tGO", useInfo = "all", pdfSW = TRUE)
+```
+
+
+
 
 
 ## KEGG enrichment test
@@ -1025,6 +1192,7 @@ cand_adult_all_load[-1,]
 nrow(kegg2_final[- grep("map", kegg2_final$KEGG.KO),])
 kegg_KOterms <- kegg2_final[- grep("map", kegg2_final$KEGG.KO),]
 
+
 #,header = FALSE)
 #write.csv(cand_adult_all,file="cand_genes_adult_topGO.tsv",row.names = F)
 
@@ -1055,5 +1223,215 @@ joint_keggs_table
 retinol_pathway_genes<-kegg2_final[grep("ko00830", kegg2_final$KEGG.KO),]
 retinol_pathway_genes
 functional_annotation[is.element(functional_annotation$GeneID,retinol_pathway_genes$Query),]
+```
+
+Exploring KEGG results:
+
+```{r}
+enr_resAdult$ID
+
+#All xenobiotic-related terms
+#total genes 236
+enr_resAdult$ID[c(1,2,12,11)]
+
+kegg980<-unlist(strsplit(enr_resAdult$geneID[1], "/"))
+kegg983<-unlist(strsplit(enr_resAdult$geneID[11], "/"))
+kegg5204<-unlist(strsplit(enr_resAdult$geneID[2], "/"))
+kegg982<-unlist(strsplit(enr_resAdult$geneID[12], "/"))
+
+#unlist(kegg983genes)
+
+#unlist(kegg980genes)
+
+#intersect(unlist(kegg983genes),unlist(kegg980genes))
+
+#xenokegg<- c(unlist(kegg983genes),unlist(kegg980genes))
+#xenokegg
+
+#xenokegg_all <- xenokegg[!duplicated(xenokegg)])
+
+#All lipid-related terms
+
+enr_resAdult$ID[c(13,5,8)]
+kegg590<-unlist(strsplit(enr_resAdult$geneID[5], "/"))
+kegg140<-unlist(strsplit(enr_resAdult$geneID[8], "/"))
+kegg1130<-unlist(strsplit(enr_resAdult$geneID[13], "/"))
+
+#intersect(intersect(kegg590,kegg140),kegg1130)
+l <- list(kegg590,kegg140,kegg1130)
+
+names(l) = c('kegg590','kegg140','kegg1130')
+result = outer(l, l, Vectorize(intersect))
+result
+
+
+#All vitamin-related terms
+
+enr_resAdult$ID[c(3,9,10)]
+kegg790<-unlist(strsplit(enr_resAdult$geneID[3], "/"))
+kegg790
+kegg860<-unlist(strsplit(enr_resAdult$geneID[9], "/"))
+kegg860
+kegg830<-unlist(strsplit(enr_resAdult$geneID[10], "/"))
+kegg830
+
+l <- list(kegg790,kegg860,kegg830)
+
+names(l) = c('kegg790','kegg860','kegg830')
+result = outer(l, l, Vectorize(intersect))
+result
+
+#All carb-related terms
+enr_resAdult$ID[c(6,4)]
+kegg053<-unlist(strsplit(enr_resAdult$geneID[6], "/"))
+kegg053
+kegg040<-unlist(strsplit(enr_resAdult$geneID[4], "/"))
+kegg040
+
+l <- list(kegg053,kegg040)
+
+names(l) = c('kegg053','kegg040')
+result = outer(l, l, Vectorize(intersect))
+result
+
+#All amino terms
+enr_resAdult$ID[c(7)]
+kegg250<-unlist(strsplit(enr_resAdult$geneID[7], "/"))
+kegg250
+
+#All amino terms
+enr_resAdult$ID[c(14)]
+kegg1120<-unlist(strsplit(enr_resAdult$geneID[14], "/"))
+kegg1120
+
+```
+
+```{r}
+l <- list(kegg983,kegg980,kegg5204,kegg982,kegg590,kegg140,kegg1130,kegg790,kegg860,kegg830,kegg053,kegg040,kegg250,kegg1120)
+
+names(l) = c('kegg983','kegg980','kegg5204','kegg982','kegg590','kegg140','kegg1130','kegg790','kegg860','kegg830','kegg053','kegg040','kegg250','kegg1120')
+result = outer(l, l, Vectorize(intersect))
+result
+
+#kegg053
+kegg790
+
+result["kegg790",'kegg980']
+result["kegg790",'kegg1130']
+result["kegg790",'kegg590']
+result["kegg790",'kegg040']
+result["kegg790",'kegg1120']
+
+
+#kegg053
+kegg040
+
+result["kegg040",'kegg980']
+result["kegg040",'kegg983']
+result["kegg040",'kegg1130']
+result["kegg040",'kegg1120']
+result["kegg040",'kegg140']
+result["kegg790",'kegg040']
+
+
+#result["kegg790",'kegg590']
+#result["kegg790",'kegg040']
+#result["kegg790",'kegg1130']
+#result["kegg790",'kegg1120']
+
+```
+
+##### Figure 3: KEGG
+```{r}
+ # library
+library(ggplot2)
+ 
+# create a dataset
+specie <- c(rep("sorgho" , 3) , rep("poacee" , 3) , rep("banana" , 3) , rep("triticum" , 3) )
+condition <- rep(c("normal" , "stress" , "Nitrogen") , 4)
+value <- abs(rnorm(12 , 0 , 15))
+data <- data.frame(specie,condition,value)
+ 
+# Stacked
+kegg_adults <- ggplot(data, aes(fill=condition, y=value, x=specie)) + 
+    geom_bar(position="stack", stat="identity") + theme(panel.background = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_blank(),
+        axis.line = element_line(size = 0.2, colour = "black"),
+        axis.text.x = element_text(size = 8, angle = 90, vjust = 0.5, hjust = 1),
+        axis.text.y = element_text(size = 8, angle = 90, hjust = 0.5),
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 8, angle = 90),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 8, angle = 90, vjust = 0.5),
+        legend.position = "top",
+        axis.ticks = element_line(colour = "black", size = 0.1))
+
+ggsave(plot = kegg_adults, "kegg_adults.pdf")
+
+
+```
+
+```{r}
+ # library
+library(ggplot2)
+ 
+# create a dataset
+#specie <- c(rep("sorgho" , 3) , rep("poacee" , 3) , rep("banana" , 3) , rep("triticum" , 3) )
+#rename kegg terms
+#kegg980,kegg5204,kegg983,kegg590,kegg140,kegg1130,kegg790,kegg860,kegg830,kegg053,kegg040,kegg250,kegg1120
+kegg_name <- c(rep('Methabolism of xenobiotics by cytochrome P450', 2) ,rep('Drug methabolism - other enzymes', 2) , rep('Sphingolipid metabolism', 2),  rep('Arachidonic acid metabolism', 2) ,rep('Steroid hormone biosynthesis', 2) ,rep('Folate biosynthesis', 2) ,rep('Porphyrin metabolism', 2) ,rep('Retinol metabolism', 2) ,rep('Ascorbate and aldarate metabolism', 2) ,rep('Pentose and glucuronate interconversions', 2) ,rep('Alanine, aspartate and glutamate metabolism', 2) ,rep('Microbial metabolism in diverse environments', 2))
+condition <- rep(c("shared" , "unique") , 12)
+#value <- abs(rnorm(12 , 0 , 15))
+value<-c(11,0,   7,2,    8,2, 6,1,    5,0,   7,0,   5,0,  5,0   ,5,0,    8,0,    4,0, 7,0)
+gene_ratio_kegg <-value/132
+data <- data.frame(kegg_name,condition,value)
+ 
+# Stacked
+kegg_adults <- ggplot(data, aes(fill=condition, y=gene_ratio_kegg, x=kegg_name)) + 
+    geom_bar(position="stack", stat="identity", fill="red") +
+  scale_x_discrete(limits=kegg_name) + theme(panel.background = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_blank(),
+        axis.line = element_line(size = 0.2, colour = "black"),
+        axis.text.x = element_text(size = 8, angle = 90, vjust = 0.5, hjust = 1),
+        axis.text.y = element_text(size = 8, angle = 90, hjust = 0.5),
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 8, angle = 90),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 8, angle = 90, vjust = 0.2),
+        legend.position = "top",
+        axis.ticks = element_line(colour = "black", size = 0.2))
+
+#ggsave(plot = kegg_adults, "kegg_adults.pdf")
+ggsave(
+  "kegg_adults.pdf",
+  plot = kegg_adults,
+  width = 8,
+  height = 13,
+  units = c("cm"),
+)
+kegg_adults
+```
+
+
+
+```{r}
+
+enr_resAdult$ID
+
+kegg <- list()
+for (x in 1:14) {
+  #print(sort(unlist(strsplit(enr_resAdult$geneID[x], "/"))))
+  kegg[[x]] <- sort(unlist(strsplit(enr_resAdult$geneID[x], "/")))
+}
+
+
+```
+
+
+```{r}
+showSigOfNodes(myGOdata, score(resultFisher), firstSigNodes = 5, useInfo ='all')
+#printGraph(myGOdata, resultFisher, firstSigNodes = 5, fn.prefix = "tGO", useInfo = "all", pdfSW = TRUE)
 ```
 
