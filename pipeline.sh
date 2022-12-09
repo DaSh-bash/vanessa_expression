@@ -386,3 +386,106 @@ HD=High density
 LD=Low density
 AL=Ad libitum
 LI=Limited food
+
+##################################################
+#FURTHR ANALYSIS AVAILABLE IN R
+
+####################################################
+#Candidate gene ANALYSIS
+cd /crex/proj/uppstore2017185/b2014034/nobackup/Dasha/VanessaRNAseq/
+mkdir BLASTingToDToL_FunctionalAnnotation
+cd BLASTingToDToL_FunctionalAnnotation/
+
+#Realized thr is no functional annotation AVAILABLE
+#change direction
+cd /Users/dshipilina/GitHub/VanessaExpression
+
+less cand_genes_adult_ab_topUp2.tsv
+
+#installing seqtk locally
+
+brew install seqtk
+#seqtk subseq makerrun3.all.maker.rename.proteins.AED50.fasta makerrun3.all.maker.rename.proteins.genenames.AED50.out > makerrun3.all.maker.rename.proteins.AED50.eAED50.fasta
+
+seqtk subseq ../../GenomicData/eggNOG_run1/queries.fasta makerrun3.all.maker.rename.proteins.genenames.AED50.out > makerrun3.all.maker.rename.proteins.AED50.eAED50.fasta
+
+../../GenomicData/eggNOG_run1/queries.fasta
+
+tail -n +2 res05hef2topDowngenenames.tsv | sed 's/\"//' | sed 's/\"//' | awk '{print $1"-RA"}' > res05hef2topDowngenenamesBLAST.tsv
+
+seqtk subseq ../../GenomicData/eggNOG_run1/queries.fasta res05hef2topDowngenenamesBLAST.tsv > res05hef2topDowngenenamesBLAST.fasta
+
+#Trying wb browser - works
+
+tail -n +2 res05hef2topUpgenenames.tsv | sed 's/\"//' | sed 's/\"//' | awk '{print $1"-RA"}' > res05hef2topUpgenenamesBLAST.tsv
+
+seqtk subseq ../../GenomicData/eggNOG_run1/queries.fasta res05hef2topUpgenenamesBLAST.tsv > res05hef2topUpgenenamesBLAST.fasta
+
+#Parsing BLAST results
+ grep -f template_grep.out RYG4Z357013-Alignment.txt
+ #checking
+
+ #xtracting names of gene
+grep -f template_grep.out res05hef2topDowngenenamesBLAST.results | grep -v ">" > res05hef2topDowngenenamesBLASTtmp.hits
+
+#Preparing the table further
+cd BLAST/res05hef2topDown/
+sed -n 'p;n'  res05hef2topDowngenenamesBLASTtmp.hits | awk -F " " '{print $3}' > res05hef2topDowngenenamesBLAST.genes
+sed -n 'n;p'  res05hef2topDowngenenamesBLASTtmp.hits | awk -F " V" '{print $1}' > res05hef2topDowngenenamesBLAST.proteins
+paste res05hef2topDowngenenamesBLAST.genes res05hef2topDowngenenamesBLAST.proteins | sort > res05hef2topDowngenenamesBLAST.results
+
+#Now up genes
+mv RYJKT98A013-Alignment-2.txt res05hef2topUpgenenamesBLASTtmp.hits
+cd BLAST/res05hef2topUp/
+grep -f ../template_grep.out res05hef2topDowngenenamesBLAST.results | grep -v ">" > res05hef2topDowngenenamesBLASTtmp.hits
+## Manual Check
+sed -n 'p;n'  res05hef2topUpgenenamesBLASTtmp.hit | awk -F " " '{print $3}' > res05hef2topUpgenenamesBLAST.genes
+sed -n 'n;p'  res05hef2topUpgenenamesBLASTtmp.hit | awk -F " V" '{print $1}' > res05hef2topUpgenenamesBLAST.proteins
+paste res05hef2topUpgenenamesBLAST.genes res05hef2topUpgenenamesBLAST.proteins | sort > res05hef2topUpgenenamesBLAST.results
+
+#Polishing tables for publication
+mkdir Tables_CandGenes
+cd Tables_CandGenes/
+tail -n +2 cand_genes_adult_he_topDown2.tsv | sed 's/\"//g' | sed 's/,/  /g' | cut -f2- | sort > cand_genes_adult_he_topDown2_OurFA.tsv
+
+#manual check
+#Some genes are missing in our annotation
+awk '{print $1"-RA"}' cand_genes_adult_he_topDown2_OurFA.tsv > tmp.compour
+awk '{print $1}' res05hef2topDowngenenamesBLAST.results > tmp.compDTol
+diff tmp.compDTol tmp.compour
+
+#Results:
+16d15
+< Vcard_DToL05212-RA
+20d18
+< Vcard_DToL07573-RA
+29d26
+< Vcard_DToL10820-RA
+
+#Adding manually
+
+#Adding gene expression Results
+sed 's/-RA//g' tmp.compDTol > tmp.compDTol2
+#grep -f tmp.compDTol2 res05hef2.csv
+
+grep -f tmp.compDTol2 res05hef2.csv > res05hef2DEresults.csv
+sed 's/\"//g' res05hef2DEresults.csv | sed 's/,/  /g' > res05hef2DEresult.csv
+paste res05hef2topDowngenenamesBLAST.results cand_genes_adult_he_topDown2_OurFA.tsv res05hef2DEresult.csv > res05hef2full_cand_genes_raw.csv
+
+#Moving to UP regulated
+mkdir Tables_CandGenes
+cd Tables_CandGenes/
+tail -n +2 cand_genes_adult_he_topUp2.tsv | sed 's/\"//g' | sed 's/,/  /g' | cut -f2- | sort > cand_genes_adult_he_topUp2_OurFA.tsv
+
+#manual check
+#Some genes are missing in our annotation
+awk '{print $1"-RA"}' cand_genes_adult_he_topUp2_OurFA.tsv > tmp.compour
+awk '{print $1}' res05hef2topUpgenenamesBLAST.results > tmp.compDTol
+diff tmp.compDTol tmp.compour
+
+4d3
+< Vcard_DToL03441-RA
+15d13
+< Vcard_DToL08807-RA
+
+tail -n +2 cand_genes_adult_he_topUp2.tsv | sort > cand_genes_adult_he_topUp2_OurFA.tsv

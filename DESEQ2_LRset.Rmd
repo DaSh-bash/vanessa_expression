@@ -41,8 +41,8 @@ head(colDataLR)
 ```
 
 Pipeline was run for the entire experimental dataset therefore needs to be split into different sets/tissues:
-#### Selecting data for abdomen
-```{r}
+#### Selecting data for abdomen/ family assignment
+```
 colDataLRab<-colDataLR[colDataLR$tissue == "A", ] #selecting abdomen samples only
 #selecting samples with abdomen tissue based on ID 
 countLRab<-countLR[,c(1,2,3,4,5,10,11,12,13,14)]
@@ -55,7 +55,7 @@ head(colDataLRab)
 
 Constructing DESeq2 object, at this point counts are transformed according to the DESeq specific algorithm.
 Current hypothsis includes split into treatment groups *only* (~condition), filtering out genes with less then 10 total counts 
-```{r}
+```
 ddsLRab <- DESeqDataSetFromMatrix(countData=countLRab, colData =colDataLRab, design = ~condition)
 
 #Basic filtering
@@ -66,7 +66,7 @@ head(ddsLRab)
 
 **DESeq analysis**
 Main valuation, calculation of p-values
-```{r}
+```
 ddsLRab <- DESeq(ddsLRab) #running the main function
 resLRab <- results(ddsLRab)
 resLRab <- resLRab[order(resLRab$padj),]
@@ -75,7 +75,7 @@ summary(resLRab)
 ```
 
 Setting up p-value to 0.05
-```{r}
+```
 res05 <- results(ddsLRab, alpha=0.05)
 summary(res05)
 ```
@@ -89,7 +89,7 @@ Log fold change shrinkage is recommended for visualization and ranking, her we f
 We provide the dds object and the name or number of the coefficient we want to shrink, where the number refers to the order of the coefficient as it appears in resultsNames(dds)."
 
 
-```{r}
+```
 #head(resultsNames(ddsLRab))
 resLFC <- lfcShrink(ddsLRab, coef="condition_LI_vs_AL", type="apeglm")
 resLFC
@@ -99,13 +99,15 @@ resLFC
 Visual exploration of the results
 
 We us first 100 significant genes to build a PCA plot:
-```{r}
+```
 vsdata <- vst(ddsLRab, blind=FALSE)
 plotPCA(vsdata, intgroup=c("Group4"))
 
 head(ddsLRab)
 ```
-#### Including group effect into analysis
+
+
+#### Analysis
 Let's define new condition
 
 We create new column with family assignment for head:
@@ -128,12 +130,12 @@ colDataLRab['family'] <- c("X18","X18","X5","X4","X4","X5","X5","U1","U2","U3")
 
 
 We use function plotMA, that shows the log2 fold changes attributable to a given variable over the mean of normalized counts for all the samples in the DESeqDataSet. Points are colored blue if the adjusted p-value is less than 0.1.
-```{r}
+```
 plotMA(resLRab, ylim=c(-5,5))
 ```
 
 Checking significant gene candidates:
-```{r}
+```
 res <- resLRab[order(resLRab$padj),]
 head(res, 10)
 
@@ -149,7 +151,7 @@ plotCounts(ddsLRab, gene="Vcard_DToL16018", intgroup="condition")
 
 Checking functions of the differentialy expressed genes
 
-```{bash}
+```
 #ls
 grep "Vcard_DToL13592" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
 grep "Vcard_DToL04829" vcard.func.annot.csv | awk -F "," '{print $1,$14,$15}'
@@ -161,7 +163,7 @@ grep "Vcard_DToL16018" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
 ```
 
 
-```{bash}
+```
 grep "Vcard_DToL13592" vcard.func.annot.csv 
 grep "Vcard_DToL04829" vcard.func.annot.csv 
 grep "Vcard_DToL13539" vcard.func.annot.csv 
@@ -174,7 +176,7 @@ grep "Vcard_DToL16018" vcard.func.annot.csv
 
 
 
-```{r}
+```
 tab <- matrix(c("N/A", "N/A", "Isl-1", "Insulin gene enhancer protein, gene encodes a transcription factor containing two N-terminal LIM domains and one C-terminal homeodomain","A10/OS-D","Insect pheromone-binding family","glipr2",1,1,1,1,1,1,1), ncol=2, byrow=TRUE)
 colnames(tab) <- c('GeneName','Function')
 rownames(tab) <- c('Vcard_DToL13592',"Vcard_DToL04829","Vcard_DToL13539","Vcard_DToL02600","Vcard_DToL10357","Vcard_DToL13220","Vcard_DToL16018" )
@@ -184,7 +186,7 @@ tab
 
 ```
 
- Including group effect
+Including group effect
 ```{r}
 ddsLRabf <- DESeqDataSetFromMatrix(countData=countLRab, colData = colDataLRab, design = ~family+condition)
 keep <- rowSums(counts(ddsLRabf)) >= 10
@@ -197,10 +199,29 @@ resLRabf <- resLRabf[order(resLRabf$padj),]
 head(resLRabf)
 summary(resLRabf)
 ```
+
+```{r}
+save(ddsLRabf, file = "ddsLRabf.rda")
+```
+
+###Recovery
+
+```{r}
+#load(file = "ddsLRabf.rda")
+ddsLRabf <- load("/Users/dshipilina/GitHub/VanessaExpression/ddsLRabf.rda")
+res05abf <- results(ddsLRabf, alpha=0.05)
+
+summary(resLRabf)
+```
+
+
+
 Filtering for lower p-values
 ```{r}
 res05abf <- results(ddsLRabf, alpha=0.05)
 summary(res05abf)
+
+save(res05abf, file = "res05abf.rda")
 
 #vsdataab <- vst(ddsLRabf, blind=FALSE)
 #plotPCA(vsdataab, intgroup=c("condition"))
@@ -211,6 +232,9 @@ summary(res05abf)
 
 Visualize results in 
 ```{r}
+
+###Didin't make it to the final plots!!!!!
+
 #resLFC <- lfcShrink(ddsLRab, coef="condition_LI_vs_AL", type="ashr")
 resLFCa <- lfcShrink(ddsLRab, coef="condition_LI_vs_AL", type="apeglm")
 #resLFC
@@ -220,50 +244,71 @@ plotMA(resLFCa, ylim=c(-4,4))
 #plotMA(res05abf)#, ylim=c(-2,2))
 ```
 
-
-
-
-```{r}
-res05abf<-na.omit(res05abf)
-res05abftopUp <- res05abf[res05abf$padj <= 0.05 & res05abf$log2FoldChange > 0, ]
-res05abftopDown <- res05abf[res05abf$padj <= 0.05 & res05abf$log2FoldChange < 0, ]
-res05abftopUp
-res05abftopDown
-
-res05abftopUpgenenames <- row.names(res05abftopUp)
-res05abftopUpgenenames
-
-res05abftopDowngenenames <- row.names(res05abftopDown)
-res05abftopDowngenenames
-```
-
+##### Figure 3A
 
 ```{r}
+
+library(ggrepel)
+
 
 #resLFC <- lfcShrink(ddsLRab, coef="condition_LI_vs_AL", type="ashr")
 ##resLFCa <- lfcShrink(ddsLRabf, coef="condition_LI_vs_AL", type="apeglm")
 #resLFC
 #reset par
-par(mfrow=c(1,1))
+#par(mfrow=c(1,1))
 # Make a basic volcano plot
-with(resLFCa, plot(log2FoldChange, -log10(pvalue), pch=20, main="Volcano plot", xlim=c(-1,1)))
+#with(resLFCa, plot(log2FoldChange, -log10(pvalue), pch=20, main="Volcano plot", xlim=c(-1,1)))
 
 # Add colored points: blue if padj<0.01, red if log2FC>1 and padj<0.05)
-with(subset(resLFCa, padj<.05 ), points(log2FoldChange, -log10(pvalue), pch=20, col="blue"))
-with(subset(resLFCa, padj<.05 & abs(log2FoldChange)>2), points(log2FoldChange, -log10(pvalue), pch=20, col="red"))
+#with(subset(resLFCa, padj<.05 ), points(log2FoldChange, -log10(pvalue), pch=20, col="blue"))
+#with(subset(resLFCa, padj<.05 & abs(log2FoldChange)>2), points(log2FoldChange, -log10(pvalue), pch=20, col="red"))
 
+#res05abf <- load(file = "res05abf.rda")
 
 #reset par
 par(mfrow=c(1,1))
 # Make a basic volcano plot
-with(res05abf, plot(log2FoldChange, -log10(pvalue), pch=20, col="grey", main="Abdomen", xlim=c(-6,6), ylim=c(0,20)))
+with(res05abf, plot(log2FoldChange, -log10(pvalue), pch=20, col="grey", main="Abdomen", xlim=c(-20,20), ylim=c(0,15)))
 
 # Add colored points: blue if padj<0.01, red if log2FC>1 and padj<0.05)
 #with(subset(res05abf, padj<.05 ), points(log2FoldChange, -log10(pvalue), pch=20, col="blue"))
 with(subset(res05abf, padj<.05 & abs(log2FoldChange)>2), points(log2FoldChange, -log10(pvalue), pch=20, col="#FF8C00"))
+
+
+
+write.csv(as.data.frame(res05abf), 
+          file="res05abf.csv")
+res05abfdata <- read.csv(file ="/Users/dshipilina/GitHub/VanessaExpression/res05abf.csv",header = TRUE)
+
+# add a column of NAs
+res05abfdata$diffexpressed <- "NO"
+# if log2Foldchange > 0.6 and pvalue < 0.05, set as "UP" 
+res05abfdata$diffexpressed[res05abfdata$log2FoldChange > 2 & res05abfdata$padj < 0.05] <- "UP"
+# if log2Foldchange < -0.6 and pvalue < 0.05, set as "DOWN"
+res05abfdata$diffexpressed[res05abfdata$log2FoldChange < -2 & res05abfdata$padj < 0.05] <- "DOWN"
+
+#res05abffuncdata <- functional_annotation[is.element(functional_annotation$GeneID,c(res05abfdata$X)),]
+#res05abffuncdata <- res05abffuncdata[order(res05abffuncdata$GeneID)]
+
+res05abfdata$delabel <- NA
+res05abfdata$delabel[res05abfdata$diffexpressed != "NO"] <- res05abfdata$X[res05abfdata$diffexpressed != "NO"]
+
+#res05abfdata$TestGeneID <- res05abffuncdata$GeneID
+
+p <- ggplot(data=res05abfdata, aes(x=log2FoldChange, y=-log10(pvalue), col=diffexpressed, label = delabel)) + geom_point() + theme_classic() +         geom_text_repel() + ylim(0, 20) + theme(aspect.ratio=1/3)
+
+
+p2 <- p + geom_vline(xintercept=c(-2, 2), col="black") #+ geom_hline(yintercept=-log10(0.05), col="black")
+
+p3 <- p2 + scale_color_manual(values=c("#062A79", "grey", "#CB0815"))
+p3
+
+
+
 ```
 
 ```{r}
+#omitting this analysis
 summary(resLFCa)
 resLFCprep<-na.omit(resLFCa)
 resLFCabf <- resLFCprep[resLFCprep$padj <= 0.05 & resLFCprep$log2FoldChange > 2, ]
@@ -546,6 +591,69 @@ with(resLRhef2, plot(log2FoldChange, -log10(pvalue), pch=20, col="grey", main="H
 #with(subset(res05abf, padj<.05 ), points(log2FoldChange, -log10(pvalue), pch=20, col="blue"))
 with(subset(resLRhef2, padj<.05 & abs(log2FoldChange)>2), points(log2FoldChange, -log10(pvalue), pch=20, col="#FF8C00"))
 ```
+##### Figure 3B
+```{r}
+write.csv(as.data.frame(res05hef2), 
+          file="res05hef2.csv")
+res05hef2data <- read.csv(file ="/Users/dshipilina/GitHub/VanessaExpression/res05hef2.csv",header = TRUE)
+
+# add a column of NAs
+res05hef2data$diffexpressed <- "NO"
+# if log2Foldchange > 0.6 and pvalue < 0.05, set as "UP" 
+res05hef2data$diffexpressed[res05hef2data$log2FoldChange > 2 & res05hef2data$padj < 0.05] <- "UP"
+# if log2Foldchange < -0.6 and pvalue < 0.05, set as "DOWN"
+res05hef2data$diffexpressed[res05hef2data$log2FoldChange < -2 & res05hef2data$padj < 0.05] <- "DOWN"
+
+
+#res05abffuncdata <- functional_annotation[is.element(functional_annotation$GeneID,c(res05abfdata$X)),]
+#res05abffuncdata <- res05abffuncdata[order(res05abffuncdata$GeneID)]
+
+res05hef2data$delabel <- NA
+res05hef2data$delabel[res05hef2data$diffexpressed != "NO"] <- res05hef2data$X[res05hef2data$diffexpressed != "NO"]
+
+#res05hef2data$signgenes <- "_"
+#res05hef2data$signgenes[is.element(res05hef2data$X,c(row.names(resLRhef2best20genes)))] <- res05hef2data$X[is.element(res05hef2data$X,c(row.names(resLRhef2best20genes)))]
+
+#res05hef2data$TestGeneID <- res05hef2funcdata$GeneID
+
+p <- ggplot(data=res05hef2data, aes(x=log2FoldChange, y=-log10(padj), col=diffexpressed, label = delabel)) + geom_point() + theme_classic() + geom_text_repel(data=df, aes(x=log2FoldChange, y=-log10(padj), col=diffexpressed, label = delabel)) +ylim(0, 20) + geom_vline(xintercept=c(-2, 2), col="black")  + scale_color_manual(values=c("#062A79", "grey", "#CB0815"))
+
+p
+
+px <- ggplot(data=df, aes(x=log2FoldChange, y=-log10(padj), col=diffexpressed, label = delabel)) + geom_point() + theme_classic() + geom_text_repel() +ylim(0, 20) + geom_vline(xintercept=c(-2, 2), col="black")  + scale_color_manual(values=c("#062A79", "grey", "#CB0815"))
+
+px
+#ggsave("res05hef2data.pdf")
+
+#p2 <- ggplot(data=res05hef2data, aes(x=log2FoldChange, y=-log10(pvalue), col=diffexpressed, label = delabel)) + geom_point() + theme_classic() + geom_text_repel() +ylim(0, 80) + geom_vline(xintercept=c(-2, 2), col="black")  + scale_color_manual(values=c("#062A79", "grey", "#CB0815"))
+
+
+
+#ggsave("res05hef2data80.pdf")
+
+#write.csv(as.data.frame(res05hef2data), 
+#          file="res05hef2data.csv")
+```
+
+```{r}
+df <-  res05hef2data %>%
+  filter(log2FoldChange > 5 & diffexpressed != "NO" | -log10(padj) > 10) #| (log2FoldChange < 45 & flipper_length_mm <180) )
+
+df
+```
+
+
+
+
+
+
+### Adding gene names
+```{r}
+resLRhef2bestgenes <- resLRhef2[order(resLRhef2$padj),]
+resLRhef2best20genes <- head(resLRhef2bestgenes, 20)
+#res05hef2data(order[res05hef2data$padj])
+```
+
 
 
 ```{r}
@@ -613,9 +721,11 @@ length(row.names(res05hef2topDown))
 
 res05hef2topUpgenenames <- row.names(res05hef2topUp)
 res05hef2topUpgenenames
+write.csv(res05hef2topUpgenenames,file="res05hef2topUpgenenames.tsv",row.names=F)
 
 res05hef2topDowngenenames <- row.names(res05hef2topDown)
 res05hef2topDowngenenames
+write.csv(res05hef2topDowngenenames,file="res05hef2topDowngenenames.tsv",row.names=F)
 
 
 res05hef2topUpfun <-functional_annotation[is.element(functional_annotation$GeneID,c(row.names(res05hef2topUp))),]
@@ -624,6 +734,28 @@ res05hef2topDownfun <- functional_annotation[is.element(functional_annotation$Ge
 write.csv(res05hef2topDownfun,file="cand_genes_adult_he_topDown2.tsv",row.names=T)
 
 ```
+
+
+```{r}
+resLRhef2bestgenes <- resLRhef2[order(resLRhef2$padj),]
+resLRhef2best20genes <- head(resLRhef2bestgenes, 20)
+
+res05hef2<-na.omit(res05hef2)
+res05hef2best20topUp <- res05hef2[res05hef2$padj <= 0.05 & res05hef2$log2FoldChange > 2, ]
+resLRhef2best20Upgenes <- head(res05hef2best20topUp, 20)
+resLRhef2best20Upgenes
+write.csv(resLRhef2best20Upgenes,file="resLRhef2best20Upgenes.tsv",row.names=T)
+
+
+res05hef2best20topDown <- res05hef2[res05hef2$padj <= 0.05 & res05hef2$log2FoldChange < - 2, ]
+resLRhef2best20Downgenes <- head(res05hef2best20topDown, 20)
+resLRhef2best20Downgenes
+write.csv(resLRhef2best20Downgenes,file="resLRhef2best20Downgenes.tsv",row.names=T)
+
+#res05hef2data(order[res05hef2data$padj])
+```
+
+
 
 
 ```{r}
