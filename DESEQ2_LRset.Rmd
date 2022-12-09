@@ -11,6 +11,8 @@ library("clusterProfiler")
 library("enrichplot")
 library("data.table")
 library(GeneOverlap)
+library(ggrepel)
+library(dplyr)
 ```
 
 
@@ -616,14 +618,11 @@ res05hef2data$delabel[res05hef2data$diffexpressed != "NO"] <- res05hef2data$X[re
 
 #res05hef2data$TestGeneID <- res05hef2funcdata$GeneID
 
-p <- ggplot(data=res05hef2data, aes(x=log2FoldChange, y=-log10(padj), col=diffexpressed, label = delabel)) + geom_point() + theme_classic() + geom_text_repel(data=df, aes(x=log2FoldChange, y=-log10(padj), col=diffexpressed, label = delabel)) +ylim(0, 20) + geom_vline(xintercept=c(-2, 2), col="black")  + scale_color_manual(values=c("#062A79", "grey", "#CB0815"))
+p <- ggplot(data=res05hef2data, aes(x=log2FoldChange, y=-log10(padj), col=diffexpressed, label = delabel)) + geom_point() + theme_classic() + geom_text_repel(data=res05hef2dataoutliersgenes, aes(x=log2FoldChange.x, y=-log10(padj.x), col=diffexpressed, label = predicted.gene)) +ylim(0, 20) + geom_vline(xintercept=c(-2, 2), col="black", linetype = 2)  + scale_color_manual(values=c("#062A79", "grey", "#CB0815"))
 
-p
+#p
 
-px <- ggplot(data=df, aes(x=log2FoldChange, y=-log10(padj), col=diffexpressed, label = delabel)) + geom_point() + theme_classic() + geom_text_repel() +ylim(0, 20) + geom_vline(xintercept=c(-2, 2), col="black")  + scale_color_manual(values=c("#062A79", "grey", "#CB0815"))
-
-px
-#ggsave("res05hef2data.pdf")
+ggsave("res05hef2data_.pdf")
 
 #p2 <- ggplot(data=res05hef2data, aes(x=log2FoldChange, y=-log10(pvalue), col=diffexpressed, label = delabel)) + geom_point() + theme_classic() + geom_text_repel() +ylim(0, 80) + geom_vline(xintercept=c(-2, 2), col="black")  + scale_color_manual(values=c("#062A79", "grey", "#CB0815"))
 
@@ -636,15 +635,23 @@ px
 ```
 
 ```{r}
-df <-  res05hef2data %>%
-  filter(log2FoldChange > 5 & diffexpressed != "NO" | -log10(padj) > 10) #| (log2FoldChange < 45 & flipper_length_mm <180) )
+res05hef2dataoutliers <-  res05hef2data %>% filter(log2FoldChange > 5 & diffexpressed != "NO" | log2FoldChange < -5 & diffexpressed != "NO" | -log10(padj) > 10) #| (log2FoldChange < 45 & flipper_length_mm <180) )
 
-df
+res05hef2candgene_names <- read.csv(file ="/Users/dshipilina/GitHub/VanessaExpression/res05hef2full_top20_cand_genes_polishing.csv",header = TRUE)
+
 ```
 
 
 
 
+
+```{r}
+res05hef2dataoutliers
+res05hef2candgene_names
+
+res05hef2dataoutliersgenes <- left_join(res05hef2dataoutliers, res05hef2candgene_names, by=c('X'='name'))
+res05hef2dataoutliersgenes
+```
 
 
 ### Adding gene names
