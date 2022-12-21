@@ -1228,10 +1228,32 @@ sort(pathway_cand_genesHDLD$GeneID)
 
 #### Pattern analysis
 ```{r}
-resDEG<-degPatterns(ma3, metadata = colDataLTR1,time = "devstage",col="condition")
+resDEG<-degPatterns(ma3, metadata = colDataLTR1,time = "devstage",col="condition", consensusCluster = TRUE)
 resDEG
 ```
+#### Figure 3B
+```{r}
+#pattLTR3abd
+pattLTR3heddata <- resDEG[["plot"]][["data"]]
 
+devstagelabs <- c("Instar III", "Instar V", "Pupa", "Adult")
+ 
+# grouped boxplot
+ggplot(pattLIhedata, aes(x=devstage, y=value, fill=condition)) + geom_violin(linewidth=0,alpha=0.4) + geom_boxplot(linewidth=0.3, width=0.6, outlier.alpha = 0.7) + scale_fill_manual(values = c("#062A79", "#CB0815"))  + labs(y = "Z-score of gene abundance", x = "Developmental stage") +  scale_x_discrete(labels=devstagelabs) +
+  theme(panel.background = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_blank(),
+        axis.line = element_line(size = 0.2, colour = "black"),
+        axis.text.x = element_text(size = 10, vjust = 0.5, hjust = 1),
+        axis.text.y = element_text(size = 10, hjust = 0.5),
+        #axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 10),
+        #legend.title = element_blank(),
+        #legend.text = element_text(size = 8, angle = 90, vjust = 0.5),
+        #legend.position = "top",
+        axis.ticks = element_line(colour = "black", size = 0.1))
+
+```
 
 
 
@@ -1411,9 +1433,37 @@ LTR3_genes$padj <- padj_specialLRT3$padj
 ```{r}
 library(DEGreport)
 #ma = assay(rlog(ddsLTR3))[row.names(resLTR305)[1:100],]
-degPatterns(ma, metadata = colDataLTR3,time = "devstage",col="condition")
+pattLTR3abd <- degPatterns(ma, metadata = colDataLTR3,time = "devstage",col="condition",consensusCluster = TRUE)
 
 ```
+
+#### Figure 3A
+
+```{r}
+pattLTR3abd
+pattLTR3abddata <- pattLTR3abd[["plot"]][["data"]]
+
+devstagelabs <- c("Instar III", "Instar V", "Pupa", "Adult")
+ 
+# grouped boxplot
+ggplot(pattLIabdata, aes(x=devstage, y=value, fill=condition)) + geom_violin(linewidth=0,alpha=0.4) + geom_boxplot(linewidth=0.3, width=0.6, outlier.alpha = 0.7) + scale_fill_manual(values = c("#062A79", "#CB0815"))  + labs(y = "Z-score of gene abundance", x = "Developmental stage") +  scale_x_discrete(labels=devstagelabs) +
+  theme(panel.background = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_blank(),
+        axis.line = element_line(size = 0.2, colour = "black"),
+        axis.text.x = element_text(size = 10, vjust = 0.5, hjust = 1),
+        axis.text.y = element_text(size = 10, hjust = 0.5),
+        #axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 10),
+        #legend.title = element_blank(),
+        #legend.text = element_text(size = 8, angle = 90, vjust = 0.5),
+        #legend.position = "top",
+        axis.ticks = element_line(colour = "black", size = 0.1))
+
+```
+
+
+
 
 ```{r}
 data(humanGender)
@@ -2198,6 +2248,12 @@ resLTRLIhe[order(resLTRLIhe$padj),]
 ```
 
 ```{r}
+saveRDS(ddsLTRLIhe, file = "ddsLTRLIhe.rds")
+saveRDS(ddsLTRLIab, file = "ddsLTRLIab.rds")
+```
+
+
+```{r}
 summary(resLTRLIhe)
 resLTRLIhe[order(resLTRLIhe),]
 resLTRLIhe<-na.omit(resLTRLIhe)
@@ -2277,18 +2333,127 @@ length(intersect(row.names(resLTRLIhe),row.names(resLTRLIab)))
 
 
 ```{r}
-#maLIab = assay(rlog(ddsLTRLIab))[row.names(resLTRLIab),]
-pattLIab <- degPatterns(maLIab, metadata = colDataLTRLIab,time = "devstage",col="condition")
+maLIab = assay(rlog(ddsLTRLIab))[row.names(resLTRLIab),]
+pattLIab <- degPatterns(maLIab, metadata = colDataLTRLIab,time = "devstage",col="condition",consensusCluster = TRUE)
 pattLIab
 ```
 
 ```{r}
-maLIhe = assay(rlog(ddsLTRLIhe))[row.names(resLTRLIhe),]
-degPatterns(maLIhe, metadata = colDataLTRLIhe,time = "devstage",col="condition")
+#replotting
+pattLIabdata <- pattLIab[["plot"]][["data"]]
+pattLIabdata
+```
+#### Figure 2A
+```{r}
+library(ggplot2)
+library(tidyverse)
+#library(hrbrthemes)
+library(viridis)
+ 
+
+#geom_jitter(color="#062A79", size=0.6, alpha=0.5)
+
+
+findoutlier <- function(x) {
+  return(x < quantile(x, .25) - 1.5*IQR(x) | x > quantile(x, .75) + 1.5*IQR(x))
+}
+
+#+ geom_text(aes(label=outlier), na.rm=TRUE, hjust=-.5)
+
+devstagelabs <- c("Instar III", "Instar V", "Pupa", "Adult")
+ 
+# grouped boxplot
+ggplot(pattLIabdata, aes(x=devstage, y=value, fill=condition)) + geom_violin(linewidth=0,alpha=0.4) + geom_boxplot(linewidth=0.3, width=0.6, outlier.alpha = 0.7) + scale_fill_manual(values = c("#062A79", "#CB0815"))  + labs(y = "Z-score of gene abundance", x = "Developmental stage") +  scale_x_discrete(labels=devstagelabs) +
+  theme(panel.background = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_blank(),
+        axis.line = element_line(size = 0.2, colour = "black"),
+        axis.text.x = element_text(size = 10, vjust = 0.5, hjust = 1),
+        axis.text.y = element_text(size = 10, hjust = 0.5),
+        #axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 10),
+        #legend.title = element_blank(),
+        #legend.text = element_text(size = 8, angle = 90, vjust = 0.5),
+        #legend.position = "top",
+        axis.ticks = element_line(colour = "black", size = 0.1))
 
 ```
 
-### GOterm analysis 
+```{r}
+findoutlier <- function(x) {
+  return(x < quantile(x, .25) - 1.5*IQR(x) | x > quantile(x, .75) + 1.5*IQR(x))
+}
+
+pattLIabdata <- pattLIabdata %>% 
+        group_by(condition,devstage) %>%
+        mutate(outlier = ifelse(findoutlier(value), genes, NA))
+
+#pattLIabdata$outlier
+```
+
+
+
+```{r}
+maLIhe = assay(rlog(ddsLTRLIhe))[row.names(resLTRLIhe),]
+degPatterns(maLIhe, metadata = colDataLTRLIhe,time = "devstage",col="condition",consensusCluster = TRUE)
+
+```
+
+
+
+```{r}
+degPatterns(maLIhe, metadata = colDataLTRLIhe,time = "devstage",col="condition",consensusCluster = FALSE)
+```
+```{r}
+pattLIhe <- degPatterns(maLIhe, metadata = colDataLTRLIhe,time = "devstage",col="condition",consensusCluster = TRUE,
+  groupDifference = 4)
+```
+#### Figure 2B
+
+```{r}
+pattLIhedata <- pattLIhe[["plot"]][["data"]]
+```
+
+
+```{r}
+library(ggplot2)
+library(tidyverse)
+#library(hrbrthemes)
+library(viridis)
+ 
+
+#geom_jitter(color="#062A79", size=0.6, alpha=0.5)
+
+
+findoutlier <- function(x) {
+  return(x < quantile(x, .25) - 1.5*IQR(x) | x > quantile(x, .75) + 1.5*IQR(x))
+}
+
+#+ geom_text(aes(label=outlier), na.rm=TRUE, hjust=-.5)
+
+devstagelabs <- c("Instar III", "Instar V", "Pupa", "Adult")
+ 
+# grouped boxplot
+ggplot(pattLIhedata, aes(x=devstage, y=value, fill=condition)) + geom_violin(linewidth=0,alpha=0.4) + geom_boxplot(linewidth=0.3, width=0.6, outlier.alpha = 0.7) + scale_fill_manual(values = c("#062A79", "#CB0815"))  + labs(y = "Z-score of gene abundance", x = "Developmental stage") +  scale_x_discrete(labels=devstagelabs) +
+  theme(panel.background = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_blank(),
+        axis.line = element_line(size = 0.2, colour = "black"),
+        axis.text.x = element_text(size = 10, vjust = 0.5, hjust = 1),
+        axis.text.y = element_text(size = 10, hjust = 0.5),
+        #axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 10),
+        #legend.title = element_blank(),
+        #legend.text = element_text(size = 8, angle = 90, vjust = 0.5),
+        #legend.position = "top",
+        axis.ticks = element_line(colour = "black", size = 0.1))
+
+```
+
+
+
+
+ ### GOterm analysis 
 
 ```{r}
 cand_LRTLI_all <- c(row.names(resLTRLIhe),row.names(resLTRLIab))

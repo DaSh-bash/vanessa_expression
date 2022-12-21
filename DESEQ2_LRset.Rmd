@@ -268,13 +268,13 @@ library(ggrepel)
 #res05abf <- load(file = "res05abf.rda")
 
 #reset par
-par(mfrow=c(1,1))
+#par(mfrow=c(1,1))
 # Make a basic volcano plot
-with(res05abf, plot(log2FoldChange, -log10(pvalue), pch=20, col="grey", main="Abdomen", xlim=c(-20,20), ylim=c(0,15)))
+#with(res05abf, plot(log2FoldChange, -log10(pvalue), pch=20, col="grey", main="Abdomen", xlim=c(-20,20), ylim=c(0,15)))
 
 # Add colored points: blue if padj<0.01, red if log2FC>1 and padj<0.05)
 #with(subset(res05abf, padj<.05 ), points(log2FoldChange, -log10(pvalue), pch=20, col="blue"))
-with(subset(res05abf, padj<.05 & abs(log2FoldChange)>2), points(log2FoldChange, -log10(pvalue), pch=20, col="#FF8C00"))
+#with(subset(res05abf, padj<.05 & abs(log2FoldChange)>2), points(log2FoldChange, -log10(pvalue), pch=20, col="#FF8C00"))
 
 
 
@@ -295,19 +295,47 @@ res05abfdata$diffexpressed[res05abfdata$log2FoldChange < -2 & res05abfdata$padj 
 res05abfdata$delabel <- NA
 res05abfdata$delabel[res05abfdata$diffexpressed != "NO"] <- res05abfdata$X[res05abfdata$diffexpressed != "NO"]
 
-#res05abfdata$TestGeneID <- res05abffuncdata$GeneID
-
-p <- ggplot(data=res05abfdata, aes(x=log2FoldChange, y=-log10(pvalue), col=diffexpressed, label = delabel)) + geom_point() + theme_classic() +         geom_text_repel() + ylim(0, 20) + theme(aspect.ratio=1/3)
+res05abfdataoutliers <-  res05abfdata %>% filter(log2FoldChange > 5 & diffexpressed != "NO" | log2FoldChange < -5 & diffexpressed != "NO" | -log10(padj) > 10) 
 
 
-p2 <- p + geom_vline(xintercept=c(-2, 2), col="black") #+ geom_hline(yintercept=-log10(0.05), col="black")
+res05abfdataoutliersgenes <- left_join(res05abfdataoutliers, res05abfcandgene_names, by=c('X'='V1'))
+res05abfdataoutliersgenes
 
-p3 <- p2 + scale_color_manual(values=c("#062A79", "grey", "#CB0815"))
-p3
+p <- ggplot(data=res05abfdata, aes(x=log2FoldChange, y=-log10(pvalue), col=diffexpressed, label = delabel)) + geom_point() + theme_classic() + geom_text_repel(data=res05abfdataoutliersgenes, aes(x=log2FoldChange, y=-log10(pvalue), col=diffexpressed, label = V3)) + ylim(0, 20) + theme(aspect.ratio = 8/6)+ geom_vline(xintercept=c(-2, 2), col="black", linetype = 2)  + scale_color_manual(values=c("#062A79", "grey", "#CB0815"))
 
+p
+
+ggsave("res05abfdata.pdf")
+
+ggsave("res05abfdata_.pdf", plot = p, width = 15, height = 30,units = c("cm"),)
 
 
 ```
+
+
+```{r}
+res05abfcandgene_names <- read.csv(file ="/Users/dshipilina/GitHub/VanessaExpression/BLAST/res05abftop/res05abftopgenenamesBLAST.tsv",header = FALSE, sep = "\t")
+res05abfcandgene_names$V1<-gsub('-RA','',res05abfcandgene_names$V1)
+res05abfcandgene_names
+
+```
+
+
+
+
+
+```{r}
+res05abf<-na.omit(res05abf)
+res05abftop <- res05abf[res05abf$padj <= 0.05 & res05abf$log2FoldChange > 2 | res05abf$padj <= 0.05 & res05abf$log2FoldChange < -2, ]
+res05abftop
+write.csv(row.names(res05abftop),file="res05abftop.tsv",row.names=F)
+
+write.csv(res05abfdataoutliers$X,file="res05abfdataoutliers.tsv",row.names=F)
+
+```
+
+
+
 
 ```{r}
 #omitting this analysis
@@ -618,11 +646,13 @@ res05hef2data$delabel[res05hef2data$diffexpressed != "NO"] <- res05hef2data$X[re
 
 #res05hef2data$TestGeneID <- res05hef2funcdata$GeneID
 
-p <- ggplot(data=res05hef2data, aes(x=log2FoldChange, y=-log10(padj), col=diffexpressed, label = delabel)) + geom_point() + theme_classic() + geom_text_repel(data=res05hef2dataoutliersgenes, aes(x=log2FoldChange.x, y=-log10(padj.x), col=diffexpressed, label = predicted.gene)) +ylim(0, 20) + geom_vline(xintercept=c(-2, 2), col="black", linetype = 2)  + scale_color_manual(values=c("#062A79", "grey", "#CB0815"))
+p <- ggplot(data=res05hef2data, aes(x=log2FoldChange, y=-log10(padj), col=diffexpressed, label = delabel)) + geom_point() + theme_classic() + geom_text_repel(data=res05hef2dataoutliersgenes, aes(x=log2FoldChange.x, y=-log10(padj.x), col=diffexpressed, label = predicted.gene)) +ylim(0, 20) + geom_vline(xintercept=c(-2, 2), col="black", linetype = 2)  + scale_color_manual(values=c("#062A79", "grey", "#CB0815")) + theme(aspect.ratio = 4/3)
 
-#p
+p
 
-ggsave("res05hef2data_.pdf")
+ggsave("res05hef2data_.pdf", plot = p, width = 15, height = 30,units = c("cm"),)
+
+#ggsave("res05hef2data_80.pdf")
 
 #p2 <- ggplot(data=res05hef2data, aes(x=log2FoldChange, y=-log10(pvalue), col=diffexpressed, label = delabel)) + geom_point() + theme_classic() + geom_text_repel() +ylim(0, 80) + geom_vline(xintercept=c(-2, 2), col="black")  + scale_color_manual(values=c("#062A79", "grey", "#CB0815"))
 
@@ -646,9 +676,7 @@ res05hef2candgene_names <- read.csv(file ="/Users/dshipilina/GitHub/VanessaExpre
 
 
 ```{r}
-res05hef2dataoutliers
-res05hef2candgene_names
-
+res05hef2candgene_names <- read.csv(file ="/Users/dshipilina/GitHub/VanessaExpression/res05hef2full_top20_cand_genes_polishing.csv",header = TRUE)
 res05hef2dataoutliersgenes <- left_join(res05hef2dataoutliers, res05hef2candgene_names, by=c('X'='name'))
 res05hef2dataoutliersgenes
 ```
@@ -857,12 +885,34 @@ comm -12 LRabtopUpgenenames.tsv CandidateGenesExpandedOrthogroups.tsv
 ```
 
 
+```{r}
+overlap_head_down <- res05hef2data$X[res05hef2data$log2FoldChange < -2 & res05hef2data$padj < 0.05]
+length(overlap_head_down)
+overlap_head_up <- res05hef2data$X[res05hef2data$log2FoldChange > 2 & res05hef2data$padj < 0.05]
+length(overlap_head_up)
+overlap_abdom_down <- res05abfdata$X[res05abfdata$log2FoldChange < -2 & res05abfdata$padj < 0.05]
+length(overlap_abdom_down)
+overlap_abdom_up <- res05abfdata$X[res05abfdata$log2FoldChange > 2 & res05abfdata$padj < 0.05]
+length(overlap_abdom_up)
+```
+
+
 Trying genes overlap
 ```{r}
 #gs.RNASeq <- 18860
-allgenes_count <- 18860
-go.obj <- newGeneOverlap(row.names(res05hef2topDown),
-                          row.names(res05abftopDown),
+allgenes_count <- 11266
+go.obj <- newGeneOverlap(overlap_head_down,
+                          overlap_abdom_down,
+                          genome.size=allgenes_count)
+
+
+go.obj
+
+go.obj <- testGeneOverlap(go.obj)
+go.obj
+
+go.obj <- newGeneOverlap(overlap_head_up,
+                          overlap_abdom_up,
                           genome.size=allgenes_count)
 
 
@@ -1083,7 +1133,13 @@ allResAdult_BP[allResAdult_BP$weight01Fisher<=0.05, ]
 #allResLTR_BP$elimFisher <- as.numeric(allResLTR_BP$elimFisher)
 #allResLTR_BP[allResLTR_BP$elimFisher<=0.05, ]
 
+saveRDS(allResAdult_BP, file = "allResAdult_BP.rds")
 
+```
+
+
+```{r}
+saveRDS(allResAdult_BP, file = "allResAdult_BP.rds")
 ```
 
 
@@ -1111,19 +1167,6 @@ allResAdult_BP$genes <- vapply(allResAdult_BP$genes, paste, collapse =",", chara
 topGOAdult_BP <- allResAdult_BP[allResAdult_BP$weight01Fisher<=0.01, ]
 ```
 
-```{r}
-#topGOAdult_BP
-
-data2 <- data.frame(x1 = 1:5,    # Create example data
-                   x2 = 6:10,
-                   x3 = 11:15)
-
-for(i in 1:nrow(data2)) {       # for-loop over rows
-  data2[i, ] <- data2[i, ] - 100
-}
-
-data2
-```
 
 ```{r}
 topGOAdult_BPtst <- topGOAdult_BP
@@ -1245,15 +1288,19 @@ plot_topGoAdulttst=ggplot(topGOAdult_BPtst, aes(x=reorder(GO_descr, -Significant
 plot_topGoAdulttst
 ```
 
+#### Figure 3D
 
 ```{r}
+
+topGOAdult_BP <- readRDS("allResAdult_BP.rds")
+
 topGOAdult_BP <- allResAdult_BP[allResAdult_BP$weight01Fisher<=0.01, ]
 nrow(allResAdult_BP[allResAdult_BP$weight01Fisher<=0.01, ])
 
 
 topGOAdult_BP$GO_descr <- paste(topGOAdult_BP$Term," (",topGOAdult_BP$GO.ID,")", sep = "")
 
-plot_topGoAdult=ggplot(topGOAdult_BP, aes(x=reorder(GO_descr, -Significant), y=Significant)) + geom_bar(stat="identity", fill="#512887") + 
+plot_topGoAdult=ggplot(topGOAdult_BP, aes(x=reorder(GO_descr, -Significant), y=Significant)) + geom_bar(stat="identity", fill="#891446") + 
   theme(panel.background = element_blank(),
         strip.background = element_blank(),
         strip.text = element_blank(),
@@ -1267,7 +1314,7 @@ plot_topGoAdult=ggplot(topGOAdult_BP, aes(x=reorder(GO_descr, -Significant), y=S
         legend.position = "top",
         axis.ticks = element_line(colour = "black", size = 0.1))
 
-#ggsave(plot = plot_topGoAdult, "topGOAdult_BP.pdf")
+ggsave(plot = plot_topGoAdult, "topGOAdult_BP.pdf")
 plot_topGoAdult
 ```
 ```{r}
@@ -1480,7 +1527,7 @@ result["kegg790",'kegg040']
 
 ```
 
-##### Figure 3: KEGG
+
 ```{r}
  # library
 library(ggplot2)
@@ -1496,6 +1543,7 @@ kegg_adults <- ggplot(data, aes(fill=condition, y=value, x=specie)) +
     geom_bar(position="stack", stat="identity") + theme(panel.background = element_blank(),
         strip.background = element_blank(),
         strip.text = element_blank(),
+        aspect.ratio=4/3,
         axis.line = element_line(size = 0.2, colour = "black"),
         axis.text.x = element_text(size = 8, angle = 90, vjust = 0.5, hjust = 1),
         axis.text.y = element_text(size = 8, angle = 90, hjust = 0.5),
@@ -1506,14 +1554,15 @@ kegg_adults <- ggplot(data, aes(fill=condition, y=value, x=specie)) +
         legend.position = "top",
         axis.ticks = element_line(colour = "black", size = 0.1))
 
-ggsave(plot = kegg_adults, "kegg_adults.pdf")
+#ggsave(plot = kegg_adults, "kegg_adults.pdf")
 
 
 ```
-
+##### Figure 3: KEGG
 ```{r}
  # library
 library(ggplot2)
+library(tidyverse)
  
 # create a dataset
 #specie <- c(rep("sorgho" , 3) , rep("poacee" , 3) , rep("banana" , 3) , rep("triticum" , 3) )
@@ -1525,11 +1574,16 @@ condition <- rep(c("shared" , "unique") , 12)
 value<-c(11,0,   7,2,    8,2, 6,1,    5,0,   7,0,   5,0,  5,0   ,5,0,    8,0,    4,0, 7,0)
 gene_ratio_kegg <-value/132
 data <- data.frame(kegg_name,condition,value)
+
+#scale_x_discrete(limits=kegg_name)
+geom_bar(position="stack", stat="identity", fill="#512887")
+
+
  
 # Stacked
-kegg_adults <- ggplot(data, aes(fill=condition, y=gene_ratio_kegg, x=kegg_name)) + 
-    geom_bar(position="stack", stat="identity", fill="red") +
-  scale_x_discrete(limits=kegg_name) + theme(panel.background = element_blank(),
+kegg_adults <- ggplot(data, aes(fill=condition, x=fct_inorder(kegg_name), y=gene_ratio_kegg)) + 
+    geom_bar(position="stack", stat="identity", fill="#512887") + scale_x_discrete() + ylab("gene ratio") + theme(panel.background = element_blank(),
+        aspect.ratio=4/3.5,
         strip.background = element_blank(),
         strip.text = element_blank(),
         axis.line = element_line(size = 0.2, colour = "black"),
@@ -1542,14 +1596,8 @@ kegg_adults <- ggplot(data, aes(fill=condition, y=gene_ratio_kegg, x=kegg_name))
         legend.position = "top",
         axis.ticks = element_line(colour = "black", size = 0.2))
 
-#ggsave(plot = kegg_adults, "kegg_adults.pdf")
-ggsave(
-  "kegg_adults.pdf",
-  plot = kegg_adults,
-  width = 8,
-  height = 13,
-  units = c("cm"),
-)
+ggsave(plot = kegg_adults, "kegg_adults.pdf")
+ggsave("kegg_adults.pdf", plot = kegg_adults, width = 8, height = 12,units = c("cm"),)
 kegg_adults
 ```
 

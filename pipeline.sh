@@ -489,3 +489,31 @@ diff tmp.compDTol tmp.compour
 < Vcard_DToL08807-RA
 
 tail -n +2 cand_genes_adult_he_topUp2.tsv | sort > cand_genes_adult_he_topUp2_OurFA.tsv
+
+## Checking abdomen genes
+res05hef2full_top20_cand_genes_polishing.csv
+
+### For abdomen blasting all together
+sed 's/\"//' res05abftop.tsv | sed 's/\"//' | awk '{print $1"-RA"}' > res05abftopgenenamesBLAST.tsv
+
+seqtk subseq ../../GenomicData/eggNOG_run1/queries.fasta res05abftopgenenamesBLAST.tsv > res05abftopgenenamesBLAST.fasta
+
+
+#too many
+tail -n +2 res05abfdataoutliers.tsv  | sed 's/\"//' | sed 's/\"//' | awk '{print $1"-RA"}' > res05abftopgenenamesoutlBLAST.tsv
+
+seqtk subseq ../../GenomicData/eggNOG_run1/queries.fasta res05abftopgenenamesoutlBLAST.tsv > res05abftopgenenamesoutlBLAST.fasta
+
+#Parsing BLAST results
+cd BLAST
+
+#extracting names of gene
+grep -f template_grep.out res05hef2topDowngenenamesBLAST.results | grep -v ">" > res05hef2topDowngenenamesBLASTtmp.hits
+
+#Preparing the table further
+cd BLAST/mkdir res05hef2top
+grep -f ../template_grep.out TA635AT3013-Alignment.txt | grep -v ">" > res05abftopgenenamesBLASTtmp.hits
+#Manual correction
+sed -n 'p;n'  res05abftopgenenamesBLASTtmp.hits | awk -F " " '{print $3}' > res05abftopgenenamesBLAST.genes
+sed -n 'n;p'  res05abftopgenenamesBLASTtmp.hits | awk -F " V" '{print $1}' > res05abftopDowngenenamesBLAST.proteins
+paste res05abftopDowngenenamesBLAST.genes res05abftopDowngenenamesBLAST.proteins | sort > res05abftopDowngenenamesBLAST.tsv
