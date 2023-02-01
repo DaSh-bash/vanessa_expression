@@ -278,8 +278,8 @@ library(ggrepel)
 
 
 
-write.csv(as.data.frame(res05abf), 
-          file="res05abf.csv")
+#write.csv(as.data.frame(res05abf), 
+#          file="res05abf.csv")
 res05abfdata <- read.csv(file ="/Users/dshipilina/GitHub/VanessaExpression/res05abf.csv",header = TRUE)
 
 # add a column of NAs
@@ -301,13 +301,25 @@ res05abfdataoutliers <-  res05abfdata %>% filter(log2FoldChange > 5 & diffexpres
 res05abfdataoutliersgenes <- left_join(res05abfdataoutliers, res05abfcandgene_names, by=c('X'='V1'))
 res05abfdataoutliersgenes
 
-p <- ggplot(data=res05abfdata, aes(x=log2FoldChange, y=-log10(pvalue), col=diffexpressed, label = delabel)) + geom_point() + theme_classic() + geom_text_repel(data=res05abfdataoutliersgenes, aes(x=log2FoldChange, y=-log10(pvalue), col=diffexpressed, label = V3)) + ylim(0, 20) + theme(aspect.ratio = 8/6)+ geom_vline(xintercept=c(-2, 2), col="black", linetype = 2)  + scale_color_manual(values=c("#062A79", "grey", "#CB0815"))
+p <- ggplot(data=res05abfdata, aes(x=log2FoldChange, y=-log10(pvalue), col=diffexpressed, label = delabel)) + geom_point() + theme_classic() + geom_text_repel(data=res05abfdataoutliersgenes, aes(x=log2FoldChange, y=-log10(pvalue), col=diffexpressed, label = V3)) + ylim(0, 20) + geom_vline(xintercept=c(-2, 2), col="black", linetype = 2)  + scale_color_manual(values=c("#084748", "grey", "#9B2C00") + theme(panel.background = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_blank(),
+        axis.line = element_line(size = 0.3, colour = "black"),
+        axis.text.x = element_text(size = 10, vjust = 0.5, hjust = 1),
+        axis.text.y = element_text(size = 10, hjust = 0.5),
+        #axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 10),
+        aspect.ratio = 8/6,
+        legend.title = element_blank(),
+        #legend.text = element_text(size = 8, angle = 90, vjust = 0.5),
+        #legend.position = "top",
+        axis.ticks = element_line(colour = "black", size = 0.3)))
 
 p
 
-ggsave("res05abfdata.pdf")
+#ggsave("res05abfdata.pdf")
 
-ggsave("res05abfdata_.pdf", plot = p, width = 15, height = 30,units = c("cm"),)
+ggsave("res05abfdata_.pdf", plot = p, width = 15, height = 15,units = c("cm"),)
 
 
 ```
@@ -623,8 +635,8 @@ with(subset(resLRhef2, padj<.05 & abs(log2FoldChange)>2), points(log2FoldChange,
 ```
 ##### Figure 3B
 ```{r}
-write.csv(as.data.frame(res05hef2), 
-          file="res05hef2.csv")
+#write.csv(as.data.frame(res05hef2), 
+#          file="res05hef2.csv")
 res05hef2data <- read.csv(file ="/Users/dshipilina/GitHub/VanessaExpression/res05hef2.csv",header = TRUE)
 
 # add a column of NAs
@@ -646,7 +658,19 @@ res05hef2data$delabel[res05hef2data$diffexpressed != "NO"] <- res05hef2data$X[re
 
 #res05hef2data$TestGeneID <- res05hef2funcdata$GeneID
 
-p <- ggplot(data=res05hef2data, aes(x=log2FoldChange, y=-log10(padj), col=diffexpressed, label = delabel)) + geom_point() + theme_classic() + geom_text_repel(data=res05hef2dataoutliersgenes, aes(x=log2FoldChange.x, y=-log10(padj.x), col=diffexpressed, label = predicted.gene)) +ylim(0, 20) + geom_vline(xintercept=c(-2, 2), col="black", linetype = 2)  + scale_color_manual(values=c("#062A79", "grey", "#CB0815")) + theme(aspect.ratio = 4/3)
+p <- ggplot(data=res05hef2data, aes(x=log2FoldChange, y=-log10(padj), col=diffexpressed, label = delabel)) + geom_point() + theme_classic() + geom_text_repel(data=res05hef2dataoutliersgenes, aes(x=log2FoldChange.x, y=-log10(padj.x), col=diffexpressed, label = predicted.gene)) +ylim(0, 20) + geom_vline(xintercept=c(-2, 2), col="black", linetype = 2)  + labs(y = "Z-score of gene abundance", x = "Developmental stage") + scale_color_manual(values=c("#084748", "grey", "#9B2C00")) + theme(panel.background = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_blank(),
+        axis.line = element_line(size = 0.3, colour = "black"),
+        axis.text.x = element_text(size = 10, vjust = 0.5, hjust = 1),
+        axis.text.y = element_text(size = 10, hjust = 0.5),
+        #axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 10),
+        aspect.ratio = 8/6,
+        legend.title = element_blank(),
+        #legend.text = element_text(size = 8, angle = 90, vjust = 0.5),
+        #legend.position = "top",
+        axis.ticks = element_line(colour = "black", size = 0.3))
 
 p
 
