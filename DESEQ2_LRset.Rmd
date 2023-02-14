@@ -301,7 +301,7 @@ res05abfdataoutliers <-  res05abfdata %>% filter(log2FoldChange > 5 & diffexpres
 res05abfdataoutliersgenes <- left_join(res05abfdataoutliers, res05abfcandgene_names, by=c('X'='V1'))
 res05abfdataoutliersgenes
 
-p <- ggplot(data=res05abfdata, aes(x=log2FoldChange, y=-log10(pvalue), col=diffexpressed, label = delabel)) + geom_point() + theme_classic() + geom_text_repel(data=res05abfdataoutliersgenes, aes(x=log2FoldChange, y=-log10(pvalue), col=diffexpressed, label = V3)) + ylim(0, 20) + geom_vline(xintercept=c(-2, 2), col="black", linetype = 2)  + scale_color_manual(values=c("#084748", "grey", "#9B2C00") + theme(panel.background = element_blank(),
+p <- ggplot(data=res05abfdata, aes(x=log2FoldChange, y=-log10(pvalue), col=diffexpressed, label = delabel)) + geom_point() + theme_classic() + geom_text_repel(data=res05abfdataoutliersgenes, aes(x=log2FoldChange, y=-log10(pvalue), col=diffexpressed, label = V3)) + ylim(0, 20) + geom_vline(xintercept=c(-2, 2), col="black", linetype = 2)  + scale_color_manual(values=c("#084748", "grey", "#9B2C00")) + theme(panel.background = element_blank(),
         strip.background = element_blank(),
         strip.text = element_blank(),
         axis.line = element_line(size = 0.3, colour = "black"),

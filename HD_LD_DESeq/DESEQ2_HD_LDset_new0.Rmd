@@ -1023,12 +1023,14 @@ ddsLTR1 <- DESeq(ddsLTR1, test = "LRT", reduced = ~family + devstage + condition
 resLTR1 <- results(ddsLTR1, alpha=0.05)
 summary(resLTR1)
 resLTR1[order(resLTR1$padj),]
+saveRDS(resLTR1, file = "resLTR1.rds")
 
 ```
 
 
 
 ```{r}
+resLTR1 <- readRDS(file = "resLTR1.rds")
 summary(resLTR1)
 resLTR1[order(resLTR1),]
 resLTR1<-na.omit(resLTR1)
@@ -1433,24 +1435,25 @@ ddsLTR3 <- DESeq(ddsLTR3, test = "LRT", reduced = ~family + devstage + condition
 resLTR3 <- results(ddsLTR3, alpha=0.05)
 summary(resLTR3)
 resLTR3[order(resLTR3$padj),]
+saveRDS(resLTR3, file = "resLTR3.rds")
 ```
 
 ```{r}
 library(DEGreport)
 library(DESeq2)
+resLTR3 <- readRDS(file = "resLTR3.rds")
 resLTR3[order(resLTR3),]
 resLTR3<-na.omit(resLTR3)
 resLTR305 <- resLTR3[resLTR3$padj <= 0.05, ]
 #ma = assay(rlog(ddsLTR3))[row.names(resLTR305),]
 #degPatterns(ma, metadata = colDataLTR3,time = "devstage",col="condition")
 
-
-library(DEGreport)
-maLDab = assay(rlog(ddsLTR3))[row.names(resLTR305)[1:100],]
-pattLDabdata <- degPatterns(maLDab, metadata = colDataLTR3,time = "devstage",col="condition",consensusCluster = TRUE)
-
 ```
 
+```{r}
+maLDab = assay(rlog(ddsLTR3))[row.names(resLTR305)[1:100],]
+pattLDabdata <- degPatterns(maLDab, metadata = colDataLTR3,time = "devstage",col="condition",consensusCluster = TRUE)
+```
 
 
 ```{r}
@@ -1577,6 +1580,287 @@ go.obj
 
 ## HDAL vs LDAL: TopGO
 
+### GOterm analysis both tissues
+
+```{r}
+cand_LRTLD_all <- c(row.names(resLTR105),row.names(resLTR305))
+cand_LRTLD_he <- c(row.names(resLTR105))
+cand_LRTLD_ab <- c(row.names(resLTR305))
+write.csv(cand_LRTLD_all,file="cand_LRTLD_all_topGO.tsv",row.names = F)
+write.csv(cand_LRTLD_he,file="cand_LRTLD_he_topGO.tsv",row.names = F)
+write.csv(cand_LRTLD_ab,file="cand_LRTLD_ab_topGO.tsv",row.names = F)
+```
+
+
+```{bash}
+#tail -n +2 hef2topDowngenenames.tsv > hef2topDowngenename.tsv
+#tail -n +2 hef2topUpgenenames.tsv > hef2topUpgenename.tsv
+
+#cat hef2topDowngenename.tsv hef2topUpgenename.tsv > LRhefgenename.tsv
+
+tail -n +2 cand_LRTLD_all_topGO.tsv | sed 's/\"//' | sed 's/\"//' | awk '{print $1"-RA"}' > cand_LRTLD_all_topGO_clean.tsv
+tail -n +2 cand_LRTLD_ab_topGO.tsv | sed 's/\"//' | sed 's/\"//' | awk '{print $1"-RA"}' > cand_LRTLD_ab_topGO_clean.tsv
+tail -n +2 cand_LRTLD_he_topGO.tsv | sed 's/\"//' | sed 's/\"//' | awk '{print $1"-RA"}' > cand_LRTLD_he_topGO_clean.tsv
+```
+
+
+```{r}
+candidate_genesLRTLD <- read.table("cand_LRTLD_all_topGO_clean.tsv", header = F)
+#candidate_genesLRTLI <- candidate_genesLRTLI[!duplicated(candidate_genesLRTLI)]
+colnames(candidate_genesLRTLD) <- "geneid"
+#cand_adult_all
+#head(candidate_genes)
+
+candidate_genesLRTLD <- as.character(candidate_genesLRTLD$geneid)
+geneListLRTLD <- factor(as.integer(geneNames %in% candidate_genesLRTLD))
+names(geneListLRTLD) <- geneNames
+head(geneListLRTLD)
+
+##Biological function
+#create the topGOdata object
+GO_dataLRTLD_BP <- new("topGOdata", 
+               ontology="BP", 
+               allGenes=geneListLRTLD, 
+               annot=annFUN.gene2GO, 
+               gene2GO=geneID2GO, 
+               nodeSize=1)
+```
+
+Abdomen TopGO
+
+```{r}
+candidate_genesLRTLD_ab <- read.table("cand_LRTLD_ab_topGO_clean.tsv", header = F)
+#candidate_genesLRTLI <- candidate_genesLRTLI[!duplicated(candidate_genesLRTLI)]
+colnames(candidate_genesLRTLD_ab) <- "geneid"
+#cand_adult_all
+#head(candidate_genes)
+
+candidate_genesLRTLD_ab <- as.character(candidate_genesLRTLD_ab$geneid)
+geneListLRTLD_ab <- factor(as.integer(geneNames %in% candidate_genesLRTLD_ab))
+names(geneListLRTLD_ab) <- geneNames
+head(geneListLRTLD_ab)
+
+##Biological function
+#create the topGOdata object
+GO_dataLRTLD_BP_ab <- new("topGOdata", 
+               ontology="BP", 
+               allGenes=geneListLRTLD_ab, 
+               annot=annFUN.gene2GO, 
+               gene2GO=geneID2GO, 
+               nodeSize=1)
+```
+
+```{r}
+LRTLD_ab_resultFisher_weight01 <- runTest(GO_dataLRTLD_BP_ab, algorithm = "weight01", statistic = "fisher")
+
+allGOLRTLD_ab = usedGO(object = GO_dataLRTLD_BP_ab)
+allResLRTLD_BP_ab <- GenTable(GO_dataLRTLD_BP_ab, 
+                   weight01Fisher = LRTLD_ab_resultFisher_weight01, 
+                   orderBy = "weight01Fisher", 
+                   ranksOf = "weight01Fisher", 
+                   topNodes = length(allGOLRTLD_ab),
+                   numChar=1000)
+
+allResLRTLD_BP_ab$weight01Fisher <- as.numeric(allResLRTLD_BP_ab$weight01Fisher)
+allResLRTLD_BP_ab[allResLRTLD_BP_ab$weight01Fisher<=0.05, ]
+
+allResLRTLD_BP_ab
+```
+
+```{r}
+saveRDS(allResLRTLD_BP_ab, file = "allResLRTLD_BP_ab.rds")
+```
+
+
+
+#### Figure 2F
+```{r}
+#allResLRTLD_BP_ab <- readRDS(file = "allResLRTLD_BP_ab.rds")
+topGOLRTLD_BP_ab <- allResLRTLD_BP_ab[allResLRTLD_BP_ab$weight01Fisher<=0.01, ]
+nrow(allResLRTLD_BP_ab[allResLRTLD_BP_ab$weight01Fisher<=0.01, ])
+
+
+topGOLRTLD_BP_ab$GO_descr <- paste(topGOLRTLD_BP_ab$Term," (",topGOLRTLD_BP_ab$GO.ID,")", sep = "")
+
+topGOLRTLD_BP_ab_select <- topGOLRTLD_BP_ab[order(topGOLRTLD_BP_ab$Significant, decreasing = TRUE),][0:15,]
+
+plot_topGoLRTLD_ab_select=ggplot(topGOLRTLD_BP_ab_select, aes(x=reorder(GO_descr, -Significant), y=Significant)) + geom_bar(stat="identity", fill="#A38A54") + 
+  theme(panel.background = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_blank(),
+        axis.line = element_line(size = 0.2, colour = "black"),
+        axis.text.x = element_text(size = 8, angle = 90, vjust = 0.5, hjust = 1),
+        axis.text.y = element_text(size = 8, angle = 90, hjust = 0.5),
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 8, angle = 90),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 8, angle = 90, vjust = 0.5),
+        legend.position = "top",
+        axis.ticks = element_line(colour = "black", size = 0.1)) #, aspect.ratio = 6/8) # + coord_fixed(1) #,
+        #aspect.ratio = 2/3)
+
+#ggsave(plot = plot_topGoLRTLD_ab_select, "topGOLRTLD_BP_ab_select.pdf")
+ggsave("topGOLRTLD_BP_ab_select.pdf", plot =plot_topGoLRTLD_ab_select, width = 8, height = 15,units = c("cm"),)
+plot_topGoLRTLD_ab_select
+```
+
+```{r}
+candidate_genesLRTLD_he <- read.table("cand_LRTLD_he_topGO_clean.tsv", header = F)
+#candidate_genesLRTLI <- candidate_genesLRTLI[!duplicated(candidate_genesLRTLI)]
+colnames(candidate_genesLRTLD_he) <- "geneid"
+#cand_adult_all
+#head(candidate_genes)
+
+candidate_genesLRTLD_he <- as.character(candidate_genesLRTLD_he$geneid)
+geneListLRTLD_he <- factor(as.integer(geneNames %in% candidate_genesLRTLD_he))
+names(geneListLRTLD_he) <- geneNames
+head(geneListLRTLD_he)
+
+##Biological function
+#create the topGOdata object
+GO_dataLRTLD_BP_he <- new("topGOdata", 
+               ontology="BP", 
+               allGenes=geneListLRTLD_he, 
+               annot=annFUN.gene2GO, 
+               gene2GO=geneID2GO, 
+               nodeSize=1)
+```
+
+
+```{r}
+LRTLD_he_resultFisher_weight01 <- runTest(GO_dataLRTLD_BP_he, algorithm = "weight01", statistic = "fisher")
+
+allGOLRTLD_he = usedGO(object = GO_dataLRTLD_BP_he)
+allResLRTLD_BP_he <- GenTable(GO_dataLRTLD_BP_he, 
+                   weight01Fisher = LRTLD_he_resultFisher_weight01, 
+                   orderBy = "weight01Fisher", 
+                   ranksOf = "weight01Fisher", 
+                   topNodes = length(allGOLRTLD_he),
+                   numChar=1000)
+
+allResLRTLD_BP_he$weight01Fisher <- as.numeric(allResLRTLD_BP_he$weight01Fisher)
+allResLRTLD_BP_he[allResLRTLD_BP_he$weight01Fisher<=0.05, ]
+
+allResLRTLD_BP_he
+```
+
+#### Figure 2E
+```{r}
+#allResLRTLI_BP
+topGOLRTLD_BP_he <- allResLRTLD_BP_he[allResLRTLD_BP_he$weight01Fisher<=0.01, ]
+nrow(allResLRTLD_BP_he[allResLRTLD_BP_he$weight01Fisher<=0.01, ])
+
+
+topGOLRTLD_BP_he$GO_descr <- paste(topGOLRTLD_BP_he$Term," (",topGOLRTLD_BP_he$GO.ID,")", sep = "")
+
+topGOLRTLD_BP_he_select <- topGOLRTLD_BP_he[order(topGOLRTLD_BP_he$Significant, decreasing = TRUE),][0:15,]
+
+plot_topGoLRTLD_he_select=ggplot(topGOLRTLD_BP_he_select, aes(x=reorder(GO_descr, -Significant), y=Significant)) + geom_bar(stat="identity", fill="#A38A54") + 
+  theme(panel.background = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_blank(),
+        axis.line = element_line(size = 0.2, colour = "black"),
+        axis.text.x = element_text(size = 8, angle = 90, vjust = 0.5, hjust = 1),
+        axis.text.y = element_text(size = 8, angle = 90, hjust = 0.5),
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 8, angle = 90),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 8, angle = 90, vjust = 0.5),
+        legend.position = "top",
+        axis.ticks = element_line(colour = "black", size = 0.1))
+
+#ggsave(plot = plot_topGoLRTLD_he_select, "topGOLRTLD_BP_he_select.pdf")
+ggsave("topGOLRTLD_BP_he_select.pdf", plot =plot_topGoLRTLD_he_select, width = 8, height = 15,units = c("cm"),)
+plot_topGoLRTLD_he_select
+```
+
+ Joint analysis
+
+```{r}
+LRTLI_resultFisher_weight01 <- runTest(GO_dataLRTLI_BP, algorithm = "weight01", statistic = "fisher")
+
+allGOLRTLI = usedGO(object = GO_dataLRTLI_BP)
+allResLRTLI_BP <- GenTable(GO_dataLRTLI_BP, 
+                   weight01Fisher = LRTLI_resultFisher_weight01, 
+                   orderBy = "weight01Fisher", 
+                   ranksOf = "weight01Fisher", 
+                   topNodes = length(allGOLRTLI),
+                   numChar=1000)
+
+allResLRTLI_BP$weight01Fisher <- as.numeric(allResLRTLI_BP$weight01Fisher)
+allResLRTLI_BP[allResLRTLI_BP$weight01Fisher<=0.05, ]
+
+allResLRTLI_BP$p_adj_fdr <- p.adjust(allResLRTLI_BP$weight01Fisher, method = "fdr")
+allResLRTLI_BP$p_adj_holm <- p.adjust(allResLRTLI_BP$weight01Fisher, method = "holm")
+allResLRTLI_BP$p_adj_bonferroni <- p.adjust(allResLRTLI_BP$weight01Fisher, method = "bonferroni")
+allResLRTLI_BP$p_adj_BH <- p.adjust(allResLRTLI_BP$weight01Fisher, method = "BH")
+
+allResLRTLI_BP
+
+```
+#### Figure
+```{r}
+#allResLRTLI_BP
+topGOLRTLI_BP <- allResLRTLI_BP[allResLRTLI_BP$weight01Fisher<=0.01, ]
+nrow(allResLRTLI_BP[allResLRTLI_BP$weight01Fisher<=0.01, ])
+
+
+topGOLRTLI_BP$GO_descr <- paste(topGOLRTLI_BP$Term," (",topGOLRTLI_BP$GO.ID,")", sep = "")
+
+topGOLRTLI_BP_select <- topGOLRTLI_BP[order(topGOLRTLI_BP$Significant, decreasing = TRUE),][0:20,]
+
+plot_topGoLRTLI_select=ggplot(topGOLRTLI_BP_select, aes(x=reorder(GO_descr, -Significant), y=Significant)) + geom_bar(stat="identity", fill="#A38A54") + 
+  theme(panel.background = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_blank(),
+        axis.line = element_line(size = 0.2, colour = "black"),
+        axis.text.x = element_text(size = 8, angle = 90, vjust = 0.5, hjust = 1),
+        axis.text.y = element_text(size = 8, angle = 90, hjust = 0.5),
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 8, angle = 90),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 8, angle = 90, vjust = 0.5),
+        legend.position = "top",
+        axis.ticks = element_line(colour = "black", size = 0.1))
+
+ggsave(plot = plot_topGoLRTLI_select, "topGOLRTLI_BP_select.pdf")
+ggsave("topGOLRTLI_BP_select.pdf", plot =plot_topGoLRTLI_select, width = 4, height = 12,units = c("cm"),)
+plot_topGoLRTLI_select
+```
+
+```{r}
+#allResLRTLI_BP
+topGOLRTLI_BP <- allResLRTLI_BP[allResLRTLI_BP$weight01Fisher<=0.01, ]
+nrow(allResLRTLI_BP[allResLRTLI_BP$weight01Fisher<=0.01, ])
+
+
+topGOLRTLI_BP$GO_descr <- paste(topGOLRTLI_BP$Term," (",topGOLRTLI_BP$GO.ID,")", sep = "")
+
+plot_topGoLRTLI=ggplot(topGOLRTLI_BP, aes(x=reorder(GO_descr, -Significant), y=Significant)) + geom_bar(stat="identity", fill="#512887") + 
+  theme(panel.background = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_blank(),
+        axis.line = element_line(size = 0.2, colour = "black"),
+        axis.text.x = element_text(size = 8, angle = 90, vjust = 0.5, hjust = 1),
+        axis.text.y = element_text(size = 8, angle = 90, hjust = 0.5),
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 8, angle = 90),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 8, angle = 90, vjust = 0.5),
+        legend.position = "top",
+        axis.ticks = element_line(colour = "black", size = 0.1))
+
+ggsave(plot = plot_topGoLRTLI, "topGOLRTLI_BP.pdf")
+plot_topGoLRTLI
+```
+
+
+
+
+
+
+
+#### Test
 ```{r}
 library(topGO)
 library(ggplot2)
@@ -1786,8 +2070,6 @@ length(intersect(LTR1gos05,LTR3gos05))
 #GOoverlap
 
 ```
-
-
 
 
 ```{r}
@@ -2648,12 +2930,15 @@ allResLRTLI_BP_ab[allResLRTLI_BP_ab$weight01Fisher<=0.05, ]
 allResLRTLI_BP_ab
 ```
 
+```{r}
+saveRDS(allResLRTLI_BP_ab, file = "allResLRTLI_BP_ab.rds")
+```
 
 
 
 #### Figure 3F
 ```{r}
-#allResLRTLI_BP
+allResLRTLI_BP_ab <- readRDS(file = "allResLRTLI_BP_ab.rds")
 topGOLRTLI_BP_ab <- allResLRTLI_BP_ab[allResLRTLI_BP_ab$weight01Fisher<=0.01, ]
 nrow(allResLRTLI_BP_ab[allResLRTLI_BP_ab$weight01Fisher<=0.01, ])
 
@@ -3117,18 +3402,19 @@ resAdult_hedata$delabel[resAdult_hedata$diffexpressed != "NO"] <- resAdult_hedat
 resAdult_hedataoutliers <-  resAdult_hedata %>% filter(log2FoldChange > 5 & diffexpressed != "NO" | log2FoldChange < -5 & diffexpressed != "NO" | -log10(padj) > 10) 
 
 
-#res05abfdataoutliersgenes <- left_join(res05abfdataoutliers, res05abfcandgene_names, by=c('X'='V1'))
-#res05abfdataoutliersgenes
+resAdult_hecandgene_names <- read.csv(file ="/Users/dshipilina/GitHub/VanessaExpression/HD_LD_DESeq/resAdultLDLI_abhe_topnamesBLAST012.csv",header = FALSE,sep = ",")
+resAdult_hecandgene_names$V1<-gsub('-RA','',resAdult_hecandgene_names$V1)
+resAdult_hecandgene_names
 
-#geom_text_repel(data=res05abfdataoutliersgenes, aes(x=log2FoldChange, y=-log10(pvalue), col=diffexpressed, label = V3))
+resAdult_he2dataoutliers <- left_join(resAdult_hedataoutliers, resAdult_hecandgene_names, by=c('delabel'='V1'))
 
-p <- ggplot(data=resAdult_hedata, aes(x=log2FoldChange, y=-log10(pvalue), col=diffexpressed, label = delabel)) + geom_point() + theme_classic()  + ylim(0, 18)+ xlim(-20, 20) + theme(aspect.ratio = 6/6)+ geom_vline(xintercept=c(-2, 2), col="black", linetype = 2)  + scale_color_manual(values=c("#9b2c00", "grey", "#084748"))
+p <- ggplot(data=resAdult_hedata, aes(x=log2FoldChange, y=-log10(padj), col=diffexpressed, label = delabel)) + geom_point() + theme_classic()  + ylim(0, 15)+ xlim(-20, 20) + geom_text_repel(data=resAdult_he2dataoutliers, aes(x=log2FoldChange, y=-log10(padj), col=diffexpressed, label = V2)) + theme(aspect.ratio = 6/6)+ geom_vline(xintercept=c(-2, 2), col="black", linetype = 2)  + scale_color_manual(values=c("#9b2c00", "grey", "#084748"))
 
 p
 
 #ggsave("resAdult_hedata.pdf")
 
-#ggsave("resAdult_hedata_.pdf", plot = p, width = 15, height = 30,units = c("cm"),)
+ggsave("resAdult_hedata.pdf", plot = p, width = 15, height = 30,units = c("cm"),)
 
 ```
 
@@ -3206,21 +3492,21 @@ resAdult_abdata$diffexpressed[resAdult_abdata$log2FoldChange < -2 & resAdult_abd
 resAdult_abdata$delabel <- NA
 resAdult_abdata$delabel[resAdult_abdata$diffexpressed != "NO"] <- resAdult_abdata$X[resAdult_abdata$diffexpressed != "NO"]
 
-#resAdult_abdataoutliers <-  resAdult_abdata %>% filter(log2FoldChange > 5 & diffexpressed != "NO" | log2FoldChange < -5 & diffexpressed != "NO" | -log10(padj) > 10) 
+resAdult_abdataoutliers <-  resAdult_abdata %>% filter(log2FoldChange > 5 & diffexpressed != "NO" | log2FoldChange < -5 & diffexpressed != "NO" | -log10(padj) > 10) 
 
+resAdult_abcandgene_names <- read.csv(file ="/Users/dshipilina/GitHub/VanessaExpression/HD_LD_DESeq/resAdultLDLI_abhe_topnamesBLAST0.tsv",header = FALSE,sep = "\t")
+resAdult_abcandgene_names$V1<-gsub('-RA','',resAdult_abcandgene_names$V1)
+resAdult_abcandgene_names
 
-#res05abfdataoutliersgenes <- left_join(res05abfdataoutliers, res05abfcandgene_names, by=c('X'='V1'))
-#res05abfdataoutliersgenes
+resAdult_ab2dataoutliers <- left_join(resAdult_abdataoutliers, resAdult_abcandgene_names, by=c('delabel'='V1'))
 
-#geom_text_repel(data=res05abfdataoutliersgenes, aes(x=log2FoldChange, y=-log10(pvalue), col=diffexpressed, label = V3))
-
-p <- ggplot(data=resAdult_abdata, aes(x=log2FoldChange, y=-log10(pvalue), col=diffexpressed, label = delabel)) + geom_point() + theme_classic()  + ylim(0, 18) + xlim(-20, 20)+ theme(aspect.ratio = 6/6)+ geom_vline(xintercept=c(-2, 2), col="black", linetype = 2)  + scale_color_manual(values=c("#9b2c00", "grey", "#084748"))
+p <- ggplot(data=resAdult_abdata, aes(x=log2FoldChange, y=-log10(padj), col=diffexpressed, label = delabel)) + geom_point() + theme_classic() + geom_text_repel(data=resAdult_ab2dataoutliers, aes(x=log2FoldChange, y=-log10(padj), col=diffexpressed, label = V2)) + ylim(0, 15) + xlim(-20, 20)+ theme(aspect.ratio = 6/6)+ geom_vline(xintercept=c(-2, 2), col="black", linetype = 2)  + scale_color_manual(values=c("#9b2c00", "grey", "#084748"))
 
 p
 
 #ggsave("resAdult_hedata.pdf")
 
-#ggsave("resAdult_hedata_.pdf", plot = p, width = 15, height = 30,units = c("cm"),)
+ggsave("resAdult_abdata.pdf", plot = p, width = 15, height = 30,units = c("cm"),)
 
 ```
 
@@ -3312,14 +3598,17 @@ resAdultLD_hedata$delabel[resAdultLD_hedata$diffexpressed != "NO"] <- resAdultLD
 resAdultLD_hedataoutliers <-  resAdultLD_hedata %>% filter(log2FoldChange > 2 & diffexpressed != "NO" | log2FoldChange < -2 & diffexpressed != "NO" | -log10(padj) > 10) 
 
 
-#res05abfdataoutliersgenes <- left_join(res05abfdataoutliers, res05abfcandgene_names, by=c('X'='V1'))
-#res05abfdataoutliersgenes
+resAdultLD_hecandgene_names <- read.csv(file ="/Users/dshipilina/GitHub/VanessaExpression/HD_LD_DESeq/resAdultLDLI_abhe_topnamesBLAST0.tsv",header = FALSE,sep = "\t")
+resAdultLD_hecandgene_names$V1<-gsub('-RA','',resAdultLD_hecandgene_names$V1)
+resAdultLD_hecandgene_names
+
+resAdultLD_he2dataoutliers <- left_join(resAdultLD_hedataoutliers, resAdultLD_hecandgene_names, by=c('delabel'='V1'))
 
 #geom_text_repel(data=res05abfdataoutliersgenes, aes(x=log2FoldChange, y=-log10(pvalue), col=diffexpressed, label = V3))
 
 #+ ylim(0, 18)+ xlim(-20, 20) 
 
-p <- ggplot(data=resAdultLD_hedata, aes(x=log2FoldChange, y=-log10(pvalue), col=diffexpressed, label = delabel)) + geom_point(size = 1.2) + theme_classic() + theme(aspect.ratio = 6/6) + ylim(0, 20)+ xlim(-30, 30)  + geom_vline(xintercept=c(-2, 2), col="black", linetype = 2, linewidth=0.4)  + scale_color_manual(values=c("#9b2c00", "grey", "#084748"))
+p <- ggplot(data=resAdultLD_hedata, aes(x=log2FoldChange, y=-log10(padj), col=diffexpressed, label = delabel)) + geom_point(size = 1.2) + theme_classic() +geom_text_repel(data=resAdultLD_he2dataoutliers, aes(x=log2FoldChange, y=-log10(padj), col=diffexpressed, label = V2)) + theme(aspect.ratio = 6/6) + ylim(0, 15)+ xlim(-30, 30)  + geom_vline(xintercept=c(-2, 2), col="black", linetype = 2, linewidth=0.4)  + scale_color_manual(values=c("#9b2c00", "grey", "#084748"))
 
 p
 
@@ -3404,23 +3693,35 @@ resAdultLD_abdata$delabel[resAdultLD_abdata$diffexpressed != "NO"] <- resAdultLD
 
 resAdultLD_abdataoutliers <-  resAdultLD_abdata %>% filter(log2FoldChange > 2 & diffexpressed != "NO" | log2FoldChange < -2 & diffexpressed != "NO" | -log10(padj) > 10) 
 
+resAdultLD_abcandgene_names <- read.csv(file ="/Users/dshipilina/GitHub/VanessaExpression/HD_LD_DESeq/resAdultLDLI_abhe_topnamesBLAST0.tsv",header = FALSE,sep = "\t")
+resAdultLD_abcandgene_names$V1<-gsub('-RA','',resAdultLD_abcandgene_names$V1)
+resAdultLD_abcandgene_names
 
-#res05abfdataoutliersgenes <- left_join(res05abfdataoutliers, res05abfcandgene_names, by=c('X'='V1'))
+resAdultLD_ab2dataoutliers <- left_join(resAdultLD_abdataoutliers, resAdultLD_abcandgene_names, by=c('delabel'='V1'))
 #res05abfdataoutliersgenes
 
 #geom_text_repel(data=res05abfdataoutliersgenes, aes(x=log2FoldChange, y=-log10(pvalue), col=diffexpressed, label = V3))
 
 #+ ylim(0, 18)+ xlim(-20, 20) 
 
-p <- ggplot(data=resAdultLD_abdata, aes(x=log2FoldChange, y=-log10(pvalue), col=diffexpressed, label = delabel)) + geom_point() + theme_classic() + ylim(0, 20)+ xlim(-30, 30) + theme(aspect.ratio = 6/6)+ geom_vline(xintercept=c(-2, 2), col="black", linetype = 2)  + scale_color_manual(values=c("#9b2c00", "grey", "#084748"))
+p <- ggplot(data=resAdultLD_abdata, aes(x=log2FoldChange, y=-log10(padj), col=diffexpressed, label = delabel)) + geom_point() + theme_classic() + geom_text_repel(data=resAdultLD_ab2dataoutliers, aes(x=log2FoldChange, y=-log10(padj), col=diffexpressed, label = V2)) + ylim(0, 15)+ xlim(-20, 20) + theme(aspect.ratio = 6/6)+ geom_vline(xintercept=c(-2, 2), col="black", linetype = 2)  + scale_color_manual(values=c("#9b2c00", "grey", "#084748"))
 
 p
 
 #ggsave("resAdult_hedata.pdf")
 
-ggsave("resAdultLD_abdata.pdf", plot = p, width = 15, height = 30,units = c("cm"),)
+#ggsave("resAdultLD_abdata.pdf", plot = p, width = 15, height = 30,units = c("cm"),)
 
 ```
+```{r}
+resAdultLD_abcandgene_names <- read.csv(file ="/Users/dshipilina/GitHub/VanessaExpression/HD_LD_DESeq/resAdultLDLI_abhe_topnamesBLAST.tsv",header = FALSE,sep = "\t")
+resAdultLD_abcandgene_names$V1<-gsub('-RA','',resAdultLD_abcandgene_names$V1)
+resAdultLD_abcandgene_names$predicted.genes <- resAdultLD_abcandgene_names$V2
+
+write.csv(resAdultLD_abcandgene_names, file ="/Users/dshipilina/GitHub/VanessaExpression/HD_LD_DESeq/resAdultLDLI_abhe_topnamesBLAST_clean.tsv",sep = "\t")
+```
+
+
 
 #### Outlier genes collecting
 ```{r}
@@ -3438,8 +3739,31 @@ resAdult_he05 <- resAdult_he[resAdult_he$padj <= 0.05, ]
 resAdult_he05 <- resAdult_he05[resAdult_he05$log2FoldChange > 2 | resAdult_he05$log2FoldChange < -2, ]
 #row.names(resAdult_he05)
 
-c(row.names(resAdultLD_he05),row.names(resAdultLD_he05),row.names(resAdultLD_ab05),row.names(resAdult_ab05))
+#resAdultLDLI_abhe <- c(row.names(resAdultLD_he05),row.names(resAdultLD_he05),row.names(resAdultLD_ab05),row.names(resAdult_ab05))
 
+#write.csv(resAdultLDLI_abhe, file="resAdultLDLI_abhe.tsv", sep = "\t")
+
+```
+
+
+```{r}
+#res05abfcandgene_names <- read.csv(file ="/Users/dshipilina/GitHub/VanessaExpression/BLAST/res05abftop/res05abftopgenenamesBLAST.tsv",header = FALSE, sep = "\t")
+#res05abfcandgene_names$V1<-gsub('-RA','',res05abfcandgene_names$V1)
+#res05abfcandgene_names
+
+res05hef2dataoutliers <-  res05hef2data %>% filter(log2FoldChange > 5 & diffexpressed != "NO" | log2FoldChange < -5 & diffexpressed != "NO" | -log10(padj) > 10) #| (log2FoldChange < 45 & flipper_length_mm <180) )
+
+#res05hef2candgene_names <- read.csv(file ="/Users/dshipilina/GitHub/VanessaExpression/res05hef2full_top20_cand_genes_polishing.csv",header = TRUE)
+
+res05hef2candgene_names <- read.csv(file ="/Users/dshipilina/GitHub/VanessaExpression/res05hef2full_top20_cand_genes_polishing.csv",header = TRUE)
+#res05hef2dataoutliersgenes <- left_join(res05hef2dataoutliers, res05hef2candgene_names, by=c('X'='name'))
+#res05hef2dataoutliersgenes
+
+#res05abfdataoutliers <-  res05abfdata %>% filter(log2FoldChange > 5 & diffexpressed != "NO" | log2FoldChange < -5 & diffexpressed != "NO" | -log10(padj) > 10) 
+
+
+#res05abfdataoutliersgenes <- left_join(res05abfdataoutliers, res05abfcandgene_names, by=c('X'='V1'))
+#res05abfdataoutliersgenes
 ```
 
 
