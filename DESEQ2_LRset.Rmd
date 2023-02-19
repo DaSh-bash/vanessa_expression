@@ -658,7 +658,7 @@ res05hef2data$delabel[res05hef2data$diffexpressed != "NO"] <- res05hef2data$X[re
 
 #res05hef2data$TestGeneID <- res05hef2funcdata$GeneID
 
-p <- ggplot(data=res05hef2data, aes(x=log2FoldChange, y=-log10(padj), col=diffexpressed, label = delabel)) + geom_point() + theme_classic() + geom_text_repel(data=res05hef2dataoutliersgenes, aes(x=log2FoldChange.x, y=-log10(padj.x), col=diffexpressed, label = predicted.gene)) +ylim(0, 20) + geom_vline(xintercept=c(-2, 2), col="black", linetype = 2)  + labs(y = "Z-score of gene abundance", x = "Developmental stage") + scale_color_manual(values=c("#084748", "grey", "#9B2C00")) + theme(panel.background = element_blank(),
+p <- ggplot(data=res05hef2data, aes(x=log2FoldChange, y=-log10(padj), col=diffexpressed, label = delabel)) + geom_point() + theme_classic() + geom_text_repel(data=res05hef2dataoutliersgenes, aes(x=log2FoldChange.x, y=-log10(padj.x), col=diffexpressed, label = predicted.gene)) +ylim(0, 20) + geom_vline(xintercept=c(-2, 2), col="black", linetype = 2) + labs(y = "Z-score of gene abundance", x = "Z-score of gene abundance")) + scale_color_manual(values=c("#084748", "grey", "#9B2C00")) + theme(panel.background = element_blank(),
         strip.background = element_blank(),
         strip.text = element_blank(),
         axis.line = element_line(size = 0.3, colour = "black"),
