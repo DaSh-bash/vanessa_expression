@@ -1,0 +1,1982 @@
+---
+title: "*Vanessa cardui* DE"
+output: html_notebook
+---
+```{r}
+library(topGO)
+library(ggplot2)
+library(DESeq2)
+library(apeglm)
+library("clusterProfiler")
+library("enrichplot")
+library("data.table")
+library(GeneOverlap)
+library(ggrepel)
+library(dplyr)
+```
+
+
+# Differntial expression in *Vanessa cardui* adults
+Experimental set up was prepared with adult females in two food availability conditions: ad libitum and no resources, to analyze the influence that environmental conditions may have on investment in migration or reproduction in imagines
+
+## Abdomen tissue 
+In this section we analyse differential expression in the abdomen tissue
+
+
+**Preparing data**  
+
+We upload count data from the DESeq2 object created within the nf-core rnaseq pipeline. Pipeline was run for the entire experimental dataset therefore needs to be split into different sets/tissues:
+
+```{r}
+load("/Users/dshipilina/GitHub/VanessaExpression/deseq2_qc/deseq2.dds.RData") #loading file
+countLR<- dds@assays@data@listData[["counts"]] #reloading count data
+colDataLR <- colData(dds) #reloading metadata 
+
+#Renaming columns for clarity
+names(colDataLR)[names(colDataLR)=="Group3"]<-"tissue"
+names(colDataLR)[names(colDataLR)=="Group1"]<-"condition"
+
+
+#Checking resulting tables
+head(countLR)
+head(colDataLR)
+```
+
+
+#### Selecting data for abdomen/ family assignment
+```
+colDataLRab<-colDataLR[colDataLR$tissue == "A", ] #selecting abdomen samples only
+#selecting samples with abdomen tissue based on ID 
+countLRab<-countLR[,c(1,2,3,4,5,10,11,12,13,14)]
+names(colDataLRab)[names(colDataLRab)=="Group3"]<-"tissue"
+names(colDataLRab)[names(colDataLRab)=="Group1"]<-"condition"
+
+head(countLRab)
+head(colDataLRab)
+```
+
+Constructing DESeq2 object, at this point counts are transformed according to the DESeq specific algorithm.
+Current hypothsis includes split into treatment groups *only* (~condition), filtering out genes with less then 10 total counts 
+```
+ddsLRab <- DESeqDataSetFromMatrix(countData=countLRab, colData =colDataLRab, design = ~condition)
+
+#Basic filtering
+keep <- rowSums(counts(ddsLRab)) >= 10
+ddsLRab <- ddsLRab[keep,]
+head(ddsLRab)
+```
+
+**DESeq analysis**
+Main valuation, calculation of p-values
+```
+ddsLRab <- DESeq(ddsLRab) #running the main function
+resLRab <- results(ddsLRab)
+resLRab <- resLRab[order(resLRab$padj),]
+head(resLRab)
+summary(resLRab)
+```
+
+Setting up p-value to 0.05
+```
+res05 <- results(ddsLRab, alpha=0.05)
+summary(res05)
+```
+
+
+
+Log fold change shrinkage is recommended for visualization and ranking, her we follow main DESEq2 vignette exactly
+
+"Shrinkage of effect size (LFC estimates) is useful for visualization and ranking of genes. To shrink the LFC, we pass the dds object to the function lfcShrink. Below we specify to use the apeglm method for effect size shrinkage (Zhu, Ibrahim, and Love 2018), which improves on the previous estimator.
+
+We provide the dds object and the name or number of the coefficient we want to shrink, where the number refers to the order of the coefficient as it appears in resultsNames(dds)."
+
+
+```
+#head(resultsNames(ddsLRab))
+resLFC <- lfcShrink(ddsLRab, coef="condition_LI_vs_AL", type="apeglm")
+resLFC
+```
+
+
+Visual exploration of the results
+
+We us first 100 significant genes to build a PCA plot:
+```
+vsdata <- vst(ddsLRab, blind=FALSE)
+plotPCA(vsdata, intgroup=c("Group4"))
+
+head(ddsLRab)
+```
+
+
+#### Analysis
+Let's define new condition basd on PCA
+
+We create new column with family assignment for head:
+"AL_ADF_H_11" "AL_ADF_H_3"  "AL_ADF_H_7"  "AL_ADF_H_9"  "LI_ADF_H_10" "LI_ADF_H_12" "LI_ADF_H_14" "LI_ADF_H_16" "LI_ADF_H_8"
+"X18" "X5"  "X4"  "X4"  "Unknown" "Unknown" "Unknown" "Unknown" "Unknown"
+
+For abdomens:
+"AL_ADF_A_11" "AL_ADF_A_19" "AL_ADF_A_3"  "AL_ADF_A_7"  "AL_ADF_A_9"  "LI_ADF_A_10" "LI_ADF_A_12" "LI_ADF_A_14" "LI_ADF_A_16" "LI_ADF_A_8"
+"X18" "X18" "X5" "X4" "X4" "Unknown" "Unknown" "Unknown" "Unknown" "Unknown" "Unknown"
+
+```{r}
+colDataLRab<-colDataLR[colDataLR$tissue == "A", ] #selecting abdomen samples only
+#selecting samples with abdomen tissue based on ID 
+countLRab<-countLR[,c(1,2,3,4,5,10,11,12,13,14)]
+names(colDataLRab)[names(colDataLRab)=="Group3"]<-"tissue"
+names(colDataLRab)[names(colDataLRab)=="Group1"]<-"condition"
+
+colDataLRab['family'] <- c("X18","X18","X5","X4","X4","X5","X5","U1","U2","U3")
+```
+
+
+We use function plotMA, that shows the log2 fold changes attributable to a given variable over the mean of normalized counts for all the samples in the DESeqDataSet. Points are colored blue if the adjusted p-value is less than 0.1.
+```
+plotMA(resLRab, ylim=c(-5,5))
+```
+
+Checking significant gene candidates:
+```
+res <- resLRab[order(resLRab$padj),]
+head(res, 10)
+
+#Plotting these genes
+plotCounts(ddsLRab, gene="Vcard_DToL13592", intgroup="condition")
+plotCounts(ddsLRab, gene="Vcard_DToL04829", intgroup="condition")
+plotCounts(ddsLRab, gene="Vcard_DToL13539", intgroup="condition")
+plotCounts(ddsLRab, gene="Vcard_DToL02600", intgroup="condition")
+plotCounts(ddsLRab, gene="Vcard_DToL10357", intgroup="condition")
+plotCounts(ddsLRab, gene="Vcard_DToL13220", intgroup="condition")
+plotCounts(ddsLRab, gene="Vcard_DToL16018", intgroup="condition")
+```
+
+Checking functions of the differentialy expressed genes
+
+```
+#ls
+grep "Vcard_DToL13592" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
+grep "Vcard_DToL04829" vcard.func.annot.csv | awk -F "," '{print $1,$14,$15}'
+grep "Vcard_DToL13539" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
+grep "Vcard_DToL02600" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
+grep "Vcard_DToL10357" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
+grep "Vcard_DToL13220" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
+grep "Vcard_DToL16018" vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}'
+```
+
+
+```
+grep "Vcard_DToL13592" vcard.func.annot.csv 
+grep "Vcard_DToL04829" vcard.func.annot.csv 
+grep "Vcard_DToL13539" vcard.func.annot.csv 
+grep "Vcard_DToL02600" vcard.func.annot.csv 
+grep "Vcard_DToL10357" vcard.func.annot.csv 
+grep "Vcard_DToL13220" vcard.func.annot.csv 
+grep "Vcard_DToL16018" vcard.func.annot.csv 
+
+```
+
+
+
+```
+tab <- matrix(c("N/A", "N/A", "Isl-1", "Insulin gene enhancer protein, gene encodes a transcription factor containing two N-terminal LIM domains and one C-terminal homeodomain","A10/OS-D","Insect pheromone-binding family","glipr2",1,1,1,1,1,1,1), ncol=2, byrow=TRUE)
+colnames(tab) <- c('GeneName','Function')
+rownames(tab) <- c('Vcard_DToL13592',"Vcard_DToL04829","Vcard_DToL13539","Vcard_DToL02600","Vcard_DToL10357","Vcard_DToL13220","Vcard_DToL16018" )
+tab <- as.table(tab)
+
+tab
+
+```
+
+Including family effect into the design
+
+```{r}
+ddsLRabf <- DESeqDataSetFromMatrix(countData=countLRab, colData = colDataLRab, design = ~family+condition)
+keep <- rowSums(counts(ddsLRabf)) >= 10
+ddsLRabf <- ddsLRabf[keep,]
+head(ddsLRabf)
+
+ddsLRabf <- DESeq(ddsLRabf)
+resLRabf <- results(ddsLRabf)
+resLRabf <- resLRabf[order(resLRabf$padj),]
+head(resLRabf)
+summary(resLRabf)
+```
+
+```{r}
+save(ddsLRabf, file = "ddsLRabf.rda")
+```
+
+###Recovery
+
+```{r}
+#load(file = "ddsLRabf.rda")
+ddsLRabf <- load("/Users/dshipilina/GitHub/VanessaExpression/ddsLRabf.rda")
+res05abf <- results(ddsLRabf, alpha=0.05)
+
+summary(resLRabf)
+```
+
+
+
+Filtering for lower p-values
+```{r}
+res05abf <- results(ddsLRabf, alpha=0.05)
+summary(res05abf)
+
+save(res05abf, file = "res05abf.rda")
+
+#vsdataab <- vst(ddsLRabf, blind=FALSE)
+#plotPCA(vsdataab, intgroup=c("condition"))
+
+```
+
+#### Results
+
+##### Figure 3A
+
+```{r}
+
+library(ggrepel)
+
+
+#res05abf <- load(file = "res05abf.rda")
+
+#write.csv(as.data.frame(res05abf), 
+#          file="res05abf.csv")
+res05abfdata <- read.csv(file ="/Users/dshipilina/GitHub/VanessaExpression/res05abf.csv",header = TRUE)
+
+res05abfcandgene_names <- read.csv(file ="/Users/dshipilina/GitHub/VanessaExpression/BLAST/res05abftop/res05abftopgenenamesBLAST.tsv",header = FALSE, sep = "\t")
+res05abfcandgene_names$V1<-gsub('-RA','',res05abfcandgene_names$V1)
+res05abfcandgene_names
+
+
+# add a column of NAs
+res05abfdata$diffexpressed <- "NO"
+# if log2Foldchange > 0.6 and pvalue < 0.05, set as "UP" 
+res05abfdata$diffexpressed[res05abfdata$log2FoldChange > 2 & res05abfdata$padj < 0.05] <- "UP"
+# if log2Foldchange < -0.6 and pvalue < 0.05, set as "DOWN"
+res05abfdata$diffexpressed[res05abfdata$log2FoldChange < -2 & res05abfdata$padj < 0.05] <- "DOWN"
+
+#res05abffuncdata <- functional_annotation[is.element(functional_annotation$GeneID,c(res05abfdata$X)),]
+#res05abffuncdata <- res05abffuncdata[order(res05abffuncdata$GeneID)]
+
+res05abfdata$delabel <- NA
+res05abfdata$delabel[res05abfdata$diffexpressed != "NO"] <- res05abfdata$X[res05abfdata$diffexpressed != "NO"]
+
+res05abfdataoutliers <-  res05abfdata %>% filter(log2FoldChange > 5 & diffexpressed != "NO" | log2FoldChange < -5 & diffexpressed != "NO" | -log10(padj) > 10) 
+
+
+res05abfdataoutliersgenes <- left_join(res05abfdataoutliers, res05abfcandgene_names, by=c('X'='V1'))
+res05abfdataoutliersgenes
+
+p <- ggplot(data=res05abfdata, aes(x=log2FoldChange, y=-log10(padj), col=diffexpressed, label = delabel)) + geom_point() + theme_classic() + geom_text_repel(data=res05abfdataoutliersgenes, aes(x=log2FoldChange, y=-log10(padj), col=diffexpressed, label = V3), size = 3)  + geom_vline(xintercept=c(-2, 2), col="black", linetype = 2)  + 
+  ylim(0, 20) + scale_color_manual(values=c("#084748", "grey", "#9B2C00")) + theme(
+    panel.background = element_blank(),
+    strip.background = element_blank(),
+    strip.text = element_blank(),
+    axis.line = element_line(size = 0.3, colour = "black"),
+    axis.text.x = element_text(size = 8, vjust = 0.5, hjust = 1),
+    axis.text.y = element_text(size = 8, hjust = 0.5),
+    axis.title.x = element_text(size = 8),
+    axis.title.y = element_text(size = 8),
+    aspect.ratio = 8/6,
+    legend.position = "none", # This removes the legend
+    axis.ticks = element_line(colour = "black", size = 0.3))
+
+p
+
+ggsave("res05abfdata_Fig2A.pdf")
+
+###ggsave("res05abfdata_.pdf", plot = p, width = 15, height = 15,units = c("cm"),)
+
+
+```
+
+
+```{r}
+res05abfcandgene_names <- read.csv(file ="/Users/dshipilina/GitHub/VanessaExpression/BLAST/res05abftop/res05abftopgenenamesBLAST.tsv",header = FALSE, sep = "\t")
+res05abfcandgene_names$V1<-gsub('-RA','',res05abfcandgene_names$V1)
+res05abfcandgene_names
+
+```
+
+
+
+
+
+```{r}
+res05abf<-na.omit(res05abf)
+res05abftop <- res05abf[res05abf$padj <= 0.05 & res05abf$log2FoldChange > 2 | res05abf$padj <= 0.05 & res05abf$log2FoldChange < -2, ]
+res05abftop
+write.csv(row.names(res05abftop),file="res05abftop.tsv",row.names=F)
+
+write.csv(res05abfdataoutliers$X,file="res05abfdataoutliers.tsv",row.names=F)
+
+```
+
+
+
+
+#### Candidate genes
+
+{r}
+fun_ann <- read.csv(file ="/Users/dshipilina/GitHub/VanessaExpression/vcard.func.annot.csv",header = FALSE)
+names(fun_ann)[names(fun_ann)=="V1"]<-"GeneID"
+names(fun_ann)[names(fun_ann)=="V8"]<-"Function"
+names(fun_ann)[names(fun_ann)=="V9"]<-"GeneName"
+names(fun_ann)[names(fun_ann)=="V21"]<-"Func_Categ"
+fun_ann$GeneID<-gsub("-RA","",as.character(fun_ann$GeneID))
+functional_annotation<-fun_ann[,c("GeneID","Function","GeneName","Func_Categ")]
+
+functional_annotation
+
+
+
+
+
+
+```{r}
+res05abf<-na.omit(res05abf)
+res05abftopUp <- res05abf[res05abf$padj <= 0.05 & res05abf$log2FoldChange > 2, ]
+res05abftopDown <- res05abf[res05abf$padj <= 0.05 & res05abf$log2FoldChange < -2, ]
+length(row.names(res05abftopUp))
+length(row.names(res05abftopDown))
+
+
+res05abftopUpfun <-functional_annotation[is.element(functional_annotation$GeneID,c(row.names(res05abftopUp))),]
+write.csv(res05abftopUpfun,file="cand_genes_adult_ab_topUp2.tsv",row.names=T)
+res05abftopDownfun <- functional_annotation[is.element(functional_annotation$GeneID,c(row.names(res05abftopDown))),]
+write.csv(res05abftopDownfun,file="cand_genes_adult_ab_topDown2.tsv",row.names=T)
+
+res05abftopUpgenenames <- row.names(res05abftopUp)
+write.csv(res05abftopUpgenenames,file="res05abftopUpgenenames.tsv",row.names=T)
+
+res05abftopDowngenenames <- row.names(res05abftopDown)
+write.csv(res05abftopDowngenenames,file="res05abftopDowngenenames.tsv",row.names=T)
+
+```
+
+
+```{r}
+res05abftopDowngenenames
+y<-res05abftopDowngenenames
+write.csv(y,file="abftopDowngenenames.tsv",row.names=F)
+```
+
+
+
+```{r}
+res05abftopUpgenenames
+y<-res05abftopUpgenenames
+write.csv(y,file="abftopUpgenenames.tsv",row.names=F)
+```
+
+
+```{bash}
+
+tail -n +2 abftopUpgenenames.tsv | sed 's/\"//' | sed 's/\"//' | awk '{print $1"-RA"}' > LRabfto.tsv
+#grep -f LRabftopalLIgenenames.tsv vcard.func.annot.csv | awk -F "," '{print $1,$15,$16}' | sort
+
+```
+
+```{bash}
+#grep 'Vcard_DToL00065-RA' vcard.func.annot.csv
+#grep 'Vcard_DToL01847-RA' vcard.func.annot.csv | awk -F "," '{print $1,$15,$16,$17,$28}' | sort
+#grep 'Vcard_DToL04177-RA' vcard.func.annot.csv
+#Vcard_DToL05345-RA
+#grep 'Vcard_DToL05345-RA' vcard.func.annot.csv  
+#| awk -F "," '{print $1,$13}' 
+#grep 'Vcard_DToL05597-RA' vcard.func.annot.csv | awk -F "," '{print $1,$15,$16,$17,$28,$108}' 
+#Vcard_DToL07626-RA
+#grep 'Vcard_DToL07626-RA' vcard.func.annot.csv | awk -F "," '{print $1,$15,$16,$17,$28,$108}'
+#Vcard_DToL08808-RA
+grep 'Vcard_DToL08808-RA' vcard.func.annot.csv | awk -F "," '{print $1,$15,$16,$17,$28,$108}'
+```
+
+
+
+## Head
+
+### Data set up
+```{r}
+colDataLRhe<-colDataLR[colDataLR$tissue == "H", ] #selecting abdomen samples only
+#selecting samples with abdomen tissue based on ID 
+countLRhe<-countLR[,-c(1,2,3,4,5,10,11,12,13,14)]
+names(colDataLRhe)[names(colDataLRhe)=="Group3"]<-"tissue"
+names(colDataLRhe)[names(colDataLRhe)=="Group1"]<-"condition"
+
+colDataLRhe['family'] <- c("X18","X5","X4","X4","Unknown","Unknown","Unknown","Unknown","Unknown")
+
+head(countLRhe)
+head(colDataLRhe)
+```
+
+Constructing DESeq2 object, at this point counts are transformed according to the DESeq specific algorithm.
+Current hypothsis includes split into treatment groups *only* (~condition), filtering out genes with less then 10 total counts 
+
+```{r}
+ddsLRhe <- DESeqDataSetFromMatrix(countData=countLRhe, colData =colDataLRhe, design = ~condition)
+
+#Basic filtering
+keep <- rowSums(counts(ddsLRhe)) >= 10
+ddsLRab <- ddsLRhe[keep,]
+head(ddsLRhe)
+```
+
+**DESeq analysis**
+Main еvaluation, calculation of p-values
+```{r}
+ddsLRhe <- DESeq(ddsLRhe) #running the main function
+resLRhe <- results(ddsLRhe)
+resLRhe <- resLRhe[order(resLRhe$padj),]
+head(resLRhe)
+summary(resLRhe)
+```
+
+Visual exploration of the results
+
+We us first 100 significant genes to build a PCA plot:
+```{r}
+vsdata <- vst(ddsLRhe, blind=FALSE)
+plotPCA(vsdata, intgroup=c("family"))
+```
+
+Redefining families:
+```{r}
+colDataLRhe<-colDataLR[colDataLR$tissue == "H", ] #selecting abdomen samples only
+#selecting samples with abdomen tissue based on ID 
+countLRhe<-countLR[,-c(1,2,3,4,5,10,11,12,13,14)]
+names(colDataLRhe)[names(colDataLRhe)=="Group3"]<-"tissue"
+
+names(colDataLRhe)[names(colDataLRhe)=="Group1"]<-"condition"
+
+colDataLRhe['family'] <- c("X18","X5","X4","X4","Unknown","Unknown","Unknown","Unknown","Unknown")
+colDataLRhe['family2'] <- c("X18","X5","X4","X4","X5","X5","U1","U2","U3")
+head(countLRhe)
+head(colDataLRhe)
+```
+
+Redesigning the experiment:
+
+```{r}
+ddsLRhef2 <- DESeqDataSetFromMatrix(countData=countLRhe, colData = colDataLRhe, design = ~family2+condition)
+keep <- rowSums(counts(ddsLRhef2)) >= 10
+ddsLRhef2 <- ddsLRhef2[keep,]
+head(ddsLRhef2)
+
+#vsdata <- vst(ddsLRhef2, blind=FALSE)
+#plotPCA(vsdata, intgroup=c("family2"))
+```
+
+**DESeq analysis**
+Main valuation, calculation of p-values
+```{r}
+ddsLRhef2 <- DESeq(ddsLRhef2) #running the main function
+resLRhef2 <- results(ddsLRhef2)
+resLRhef2 <- resLRhef2[order(resLRhef2$padj),]
+head(resLRhef2)
+summary(resLRhef2)
+```
+
+Setting up p-value to 0.05
+```{r}
+res05hef2 <- results(ddsLRhef2, alpha=0.05)
+summary(res05hef2)
+```
+
+
+Visual exploration of the results
+
+We use first 100 significant genes to build a PCA plot:
+```{r}
+vsdata <- vst(ddsLRhef2, blind=FALSE)
+plotPCA(vsdata, intgroup=c("condition"))
+```
+
+### Exploring results
+
+#### Candidate genes
+Selecting upregulated genes of interest based on arbitrary (stringent) criteria
+```{r}
+#res05hef2[order(res05hef2$padj),]
+res05hef2<-na.omit(res05hef2)
+res05hef2topUp <- res05hef2[res05hef2$padj <= 0.05 & res05hef2$log2FoldChange > 2, ]
+res05hef2topDown <- res05hef2[res05hef2$padj <= 0.05 & res05hef2$log2FoldChange < -2, ]
+length(row.names(res05hef2topUp))
+length(row.names(res05hef2topDown))
+
+res05hef2topUpgenenames <- row.names(res05hef2topUp)
+res05hef2topUpgenenames
+write.csv(res05hef2topUpgenenames,file="res05hef2topUpgenenames.tsv",row.names=F)
+
+res05hef2topDowngenenames <- row.names(res05hef2topDown)
+res05hef2topDowngenenames
+write.csv(res05hef2topDowngenenames,file="res05hef2topDowngenenames.tsv",row.names=F)
+
+
+res05hef2topUpfun <-functional_annotation[is.element(functional_annotation$GeneID,c(row.names(res05hef2topUp))),]
+#write.csv(res05hef2topUpfun,file="cand_genes_adult_he_topUp2.tsv",row.names=T)
+res05hef2topDownfun <- functional_annotation[is.element(functional_annotation$GeneID,c(row.names(res05hef2topDown))),]
+#write.csv(res05hef2topDownfun,file="cand_genes_adult_he_topDown2.tsv",row.names=T)
+
+```
+
+##### Figure 3B old
+```{r}
+#res05hef2data <- read.csv(file ="/Users/dshipilina/GitHub/VanessaExpression/res05hef2.csv",header = TRUE)
+
+#write.csv(as.data.frame(res05hef2), 
+#          file="res05hef2.csv")
+res05hef2data <- read.csv(file ="/Users/dshipilina/GitHub/VanessaExpression/res05hef2.csv",header = TRUE)
+
+# add a column of NAs
+res05hef2data$diffexpressed <- "NO"
+# if log2Foldchange > 0.6 and pvalue < 0.05, set as "UP" 
+res05hef2data$diffexpressed[res05hef2data$log2FoldChange > 2 & res05hef2data$padj < 0.05] <- "UP"
+# if log2Foldchange < -0.6 and pvalue < 0.05, set as "DOWN"
+res05hef2data$diffexpressed[res05hef2data$log2FoldChange < -2 & res05hef2data$padj < 0.05] <- "DOWN"
+
+res05hef2dataoutliers <-  res05hef2data %>% filter(log2FoldChange > 2 & diffexpressed != "NO" | log2FoldChange < -2 & diffexpressed != "NO" | padj < 0.01) #| (log2FoldChange < 45 & flipper_length_mm <180) )
+
+
+res05hef2candgene_names <- read.csv(file ="/Users/dshipilina/GitHub/VanessaExpression/res05hef2full_top20_cand_genes_polishing.csv",header = TRUE)
+res05hef2dataoutliersgenes <- left_join(res05hef2dataoutliers, res05hef2candgene_names, by=c('X'='name'))
+res05hef2dataoutliersgenes
+
+
+
+#res05abffuncdata <- functional_annotation[is.element(functional_annotation$GeneID,c(res05abfdata$X)),]
+#res05abffuncdata <- res05abffuncdata[order(res05abffuncdata$GeneID)]
+
+res05hef2data$delabel <- NA
+res05hef2data$delabel[res05hef2data$diffexpressed != "NO"] <- res05hef2data$X[res05hef2data$diffexpressed != "NO"]
+
+#res05hef2data$signgenes <- "_"
+#res05hef2data$signgenes[is.element(res05hef2data$X,c(row.names(resLRhef2best20genes)))] <-
+#res05hef2data$X[is.element(res05hef2data$X,c(row.names(resLRhef2best20genes)))]
+
+#res05hef2data$TestGeneID <- res05hef2funcdata$GeneID
+
+#+ylim(0, 20)
+#+ labs(y = "Z-score of gene abundance", x = "Z-score of gene abundance")
+
+p <- ggplot(data=res05hef2data, aes(x=log2FoldChange, y=-log10(padj), col=diffexpressed, label = delabel)) + geom_point() + theme_classic() + geom_text_repel(data=res05hef2dataoutliersgenes, aes(x=log2FoldChange.x, y=-log10(padj.x), col=diffexpressed, label = predicted.gene)) + geom_vline(xintercept=c(-2, 2), col="black", linetype = 2)  + scale_color_manual(values=c("#084748", "grey", "#9B2C00")) + theme(panel.background = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_blank(),
+        axis.line = element_line(size = 0.3, colour = "black"),
+        axis.text.x = element_text(size = 10, vjust = 0.5, hjust = 1),
+        axis.text.y = element_text(size = 10, hjust = 0.5),
+        
+        #axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 10),
+        aspect.ratio = 8/6,
+        legend.title = element_blank(),
+        #legend.text = element_text(size = 8, angle = 90, vjust = 0.5),
+        #legend.position = "top",
+        axis.ticks = element_line(colour = "black", size = 0.3))
+
+p
+
+#ggsave("res05hef2data_.pdf", plot = p, width = 15, height = 30,units = c("cm"),)
+
+#ggsave("res05hef2data_80.pdf")
+
+#p2 <- ggplot(data=res05hef2data, aes(x=log2FoldChange, y=-log10(pvalue), col=diffexpressed, label = delabel)) + geom_point() + theme_classic() + geom_text_repel() +ylim(0, 80) + geom_vline(xintercept=c(-2, 2), col="black")  + scale_color_manual(values=c("#062A79", "grey", "#CB0815"))
+
+
+
+#ggsave("res05hef2data80.pdf")
+
+#write.csv(as.data.frame(res05hef2data), 
+#          file="res05hef2data.csv")
+```
+```{r}
+res05hef2dataoutliers <-  res05hef2data %>% filter(log2FoldChange > 2 & diffexpressed != "NO" | log2FoldChange < -2 & diffexpressed != "NO" | -log10(padj) > 5) #
+
+
+res05hef2candgene_names <- read.csv(file ="/Users/dshipilina/GitHub/VanessaExpression/res05hef2full_top20_cand_genes_polishing.csv",header = TRUE)
+res05hef2dataoutliersgenes <- left_join(res05hef2dataoutliers, res05hef2candgene_names, by=c('X'='name'))
+res05hef2dataoutliersgenes
+```
+
+
+##### Figure 3B
+```{r}
+res05hef2data <- read.csv(file ="/Users/dshipilina/GitHub/VanessaExpression/res05hef2.csv",header = TRUE)
+
+# add a column of NAs
+res05hef2data$diffexpressed <- "NO"
+# if log2Foldchange > 0.6 and pvalue < 0.05, set as "UP" 
+res05hef2data$diffexpressed[res05hef2data$log2FoldChange > 2 & res05hef2data$padj < 0.05] <- "UP"
+# if log2Foldchange < -0.6 and pvalue < 0.05, set as "DOWN"
+res05hef2data$diffexpressed[res05hef2data$log2FoldChange < -2 & res05hef2data$padj < 0.05] <- "DOWN"
+
+res05hef2dataoutliers <-  res05hef2data %>% filter(log2FoldChange > 5 & diffexpressed != "NO" | log2FoldChange < -5 & diffexpressed != "NO" | -log10(padj) > 10) #| (log2FoldChange < 45 & flipper_length_mm <180) )
+
+
+res05hef2candgene_names <- read.csv(file ="/Users/dshipilina/GitHub/VanessaExpression/res05hef2full_top20_cand_genes_polishing.csv",header = TRUE)
+res05hef2dataoutliersgenes <- left_join(res05hef2dataoutliers, res05hef2candgene_names, by=c('X'='name'))
+res05hef2dataoutliersgenes
+
+
+
+#res05abffuncdata <- functional_annotation[is.element(functional_annotation$GeneID,c(res05abfdata$X)),]
+#res05abffuncdata <- res05abffuncdata[order(res05abffuncdata$GeneID)]
+
+res05hef2data$delabel <- NA
+res05hef2data$delabel[res05hef2data$diffexpressed != "NO"] <- res05hef2data$X[res05hef2data$diffexpressed != "NO"]
+
+#res05hef2data$signgenes <- "_"
+#res05hef2data$signgenes[is.element(res05hef2data$X,c(row.names(resLRhef2best20genes)))] <-
+#res05hef2data$X[is.element(res05hef2data$X,c(row.names(resLRhef2best20genes)))]
+
+#res05hef2data$TestGeneID <- res05hef2funcdata$GeneID
+
+#+ylim(0, 20)
+#+ labs(y = "Z-score of gene abundance", x = "Z-score of gene abundance")
+
+
+res05hef2data$log10padj <- ifelse(-log10(res05hef2data$padj) > 20, 20, -log10(res05hef2data$padj))
+res05hef2dataoutliersgenes$log10padjo <- ifelse(-log10(res05hef2dataoutliersgenes$padj.x) > 20, 20, -log10(res05hef2dataoutliersgenes$padj.x))
+
+# add a column of NAs
+res05hef2data$outl <- "NO"
+# if log2Foldchange > 0.6 and pvalue < 0.05, set as "UP" 
+res05hef2data$outl[res05hef2data$log10padj == 20] <- "OUT"
+# if log2Foldchange < -0.6 and pvalue < 0.05, set as "DOWN"
+#res05hef2data$diffexpressed[res05hef2data$log2FoldChange < -2 & res05hef2data$padj < 0.05] <- "DOWN"
+res05hef2data
+
+#Manually adding JHE removed by automated labeling
+y_coordinate <- -log10(2.28e-05)
+
+
+p <- ggplot(data=res05hef2data, aes(x=log2FoldChange, y=log10padj, col=diffexpressed, label = delabel)) + 
+  geom_point(aes(shape = ifelse(outl == "OUT", "triangle", "circle"))) + 
+  theme_classic() + 
+  ylim(0, 20) + annotate("text", x = -3.32, y = y_coordinate, label = "JHE", 
+                  hjust = 0.5, vjust = 0.5, 
+                  size = 3,    # Size of the text
+                  color = "#084748") + # Color of the text +
+  geom_text_repel(
+  data = res05hef2dataoutliersgenes,
+  aes(x = log2FoldChange.x, y = log10padjo, label = predicted.gene),
+  size = 3 #,  # Size of the text
+  #nudge_x = 0.5,  # Nudge labels horizontally; adjust as needed
+  #nudge_y = 0.1,  # Nudge labels vertically; adjust as needed
+ # max.overlaps = Inf,  # Allow more overlaps
+  #box.padding = 0.1,  # Adjust spacing around labels
+  #point.padding = 0.1,  # Adjust spacing around points
+  #segment.size = 0.2   # Adjust the size of the line connecting label and point
+) + 
+  geom_vline(xintercept=c(-2, 2), col="black", linetype = 2) + 
+  scale_color_manual(values=c("#084748", "grey", "#9B2C00")) + 
+  theme(
+    panel.background = element_blank(),
+    strip.background = element_blank(),
+    strip.text = element_blank(),
+    axis.line = element_line(size = 0.3, colour = "black"),
+    axis.text.x = element_text(size = 8, vjust = 0.5, hjust = 1),
+    axis.text.y = element_text(size = 8, hjust = 0.5),
+    axis.title.x = element_text(size = 8),
+    axis.title.y = element_text(size = 8),
+    aspect.ratio = 8/6,
+    legend.position = "none", # This removes the legend
+    axis.ticks = element_line(colour = "black", size = 0.3)
+  )
+
+p
+
+ggsave("res05hef2_Fig2_1.pdf")
+#ggsave("res05hef2_Fig2_1.pdf", plot = p, width = 15, height = 30,units = c("cm"),)
+```
+
+
+```{r}
+p <- ggplot(data=res05hef2data, aes(x=log2FoldChange, y=log10padj, col=diffexpressed, label = delabel)) + 
+  geom_point(aes(shape = ifelse(outl == "OUT", "triangle", "circle"))) + 
+  theme_classic() + 
+  ylim(0, 20) + 
+  geom_text_repel(
+    data=res05hef2dataoutliersgenes, 
+    aes(x=log2FoldChange.x, y=log10padjo, label = predicted.gene), 
+    size = 2.5 # Adjust the size here as needed
+  ) + 
+  geom_vline(xintercept=c(-2, 2), col="black", linetype = 2) + 
+  scale_color_manual(values=c("#084748", "grey", "#9B2C00")) + 
+  theme(
+    panel.background = element_blank(),
+    strip.background = element_blank(),
+    strip.text = element_blank(),
+    axis.line = element_line(size = 0.3, colour = "black"),
+    axis.text.x = element_text(size = 8, vjust = 0.5, hjust = 1),
+    axis.text.y = element_text(size = 8, hjust = 0.5),
+    axis.title.y = element_text(size = 8),
+    aspect.ratio = 8/6,
+    legend.title = element_blank(),
+    axis.ticks = element_line(colour = "black", size = 0.3),
+    legend.text = element_text(size = 8) # Adjust legend text size
+  )
+
+p
+```
+```{r}
+p <- ggplot(data=res05hef2data, aes(x=log2FoldChange, y=log10padj, col=diffexpressed, label = delabel)) + 
+  geom_point(aes(shape = ifelse(outl == "OUT", "triangle", "circle"))) + 
+  theme_classic() + 
+  ylim(0, 20) + 
+  geom_text_repel(
+  data = res05hef2dataoutliersgenes,
+  aes(x = log2FoldChange.x, y = log10padjo, label = predicted.gene),
+  size = 3 #,  # Size of the text
+  #nudge_x = 0.5,  # Nudge labels horizontally; adjust as needed
+  #nudge_y = 0.1,  # Nudge labels vertically; adjust as needed
+ # max.overlaps = Inf,  # Allow more overlaps
+  #box.padding = 0.1,  # Adjust spacing around labels
+  #point.padding = 0.1,  # Adjust spacing around points
+  #segment.size = 0.2   # Adjust the size of the line connecting label and point
+) + 
+  geom_vline(xintercept=c(-2, 2), col="black", linetype = 2) + 
+  scale_color_manual(values=c("#084748", "grey", "#9B2C00")) + 
+  theme(
+    panel.background = element_blank(),
+    strip.background = element_blank(),
+    strip.text = element_blank(),
+    axis.line = element_line(size = 0.3, colour = "black"),
+    axis.text.x = element_text(size = 8, vjust = 0.5, hjust = 1),
+    axis.text.y = element_text(size = 8, hjust = 0.5),
+    axis.title.x = element_text(size = 8),
+    axis.title.y = element_text(size = 8),
+    aspect.ratio = 8/6,
+    legend.position = "none", # This removes the legend
+    axis.ticks = element_line(colour = "black", size = 0.3)
+  )
+
+p
+```
+
+
+```{r}
+res05hef2dataoutliersgenes
+res05hef2dataoutliers
+```
+
+
+
+```{r}
+res05hef2data$log10padj <- ifelse(-log10(res05hef2data$padj) > 20, 20, -log10(res05hef2data$padj))
+res05hef2data$log10padj
+res05hef2dataoutliersgenes$log10padjo <- ifelse(-log10(res05hef2dataoutliersgenes$padj.x) > 20, 20, -log10(res05hef2dataoutliersgenes$padj.x))
+res05hef2dataoutliersgenes
+```
+
+
+```{r}
+res05hef2data
+res05abfdata
+
+res05hef2dataoutliersgenes
+res05abfdataoutliersgenes
+```
+```{r}
+p <- ggplot(data=res05hef2data, aes(x=log2FoldChange, y=-log10(padj), col=diffexpressed, label = delabel)) + geom_point() + theme_classic() +ylim(0, 20) + geom_vline(xintercept=c(-2, 2), col="black", linetype = 2) + scale_color_manual(values=c("#084748", "grey", "#9B2C00"))+ theme(panel.background = element_blank(),
+                        strip.background = element_blank(),
+                        strip.text = element_blank(),
+                        axis.line = element_line(size = 0.3, colour = "black"),
+                        axis.text.x = element_text(size = 10, vjust = 0.5, hjust = 1),
+                        axis.text.y = element_text(size = 10, hjust = 0.5),
+                        #axis.title.x = element_blank(),
+                        axis.title.y = element_text(size = 10),
+                        aspect.ratio = 8/6,
+                        legend.title = element_blank(),
+                        #legend.text = element_text(size = 8, angle = 90, vjust = 0.5),
+                        #legend.position = "top",
+                        axis.ticks = element_line(colour = "black", size = 0.3))
+p
+
+p <- ggplot(data=res05abfdata, aes(x=log2FoldChange, y=-log10(padj), col=diffexpressed, label = delabel)) + geom_point() + theme_classic() +ylim(0, 20) + geom_vline(xintercept=c(-2, 2), col="black", linetype = 2) + scale_color_manual(values=c("#084748", "grey", "#9B2C00"))+ theme(panel.background = element_blank(),
+                        strip.background = element_blank(),
+                        strip.text = element_blank(),
+                        axis.line = element_line(size = 0.3, colour = "black"),
+                        axis.text.x = element_text(size = 10, vjust = 0.5, hjust = 1),
+                        axis.text.y = element_text(size = 10, hjust = 0.5),
+                        #axis.title.x = element_blank(),
+                        axis.title.y = element_text(size = 10),
+                        aspect.ratio = 8/6,
+                        legend.title = element_blank(),
+                        #legend.text = element_text(size = 8, angle = 90, vjust = 0.5),
+                        #legend.position = "top",
+                        axis.ticks = element_line(colour = "black", size = 0.3))
+p
+
+ggsave("tst.pdf")
+```
+```{r}
+library(ggplot2)
+library(ggrepel)
+
+# Create a new column with capped y-values
+res05hef2data$y_capped <- ifelse(res05hef2data$y > 20, 20, res05hef2data$y)
+
+p <- ggplot(data = res05hef2data, aes(x = log2FoldChange, y = -log10(padj), col = diffexpressed, label = delabel)) +
+  geom_point(aes(shape = ifelse(-log10(padj) > 20, "triangle", diffexpressed))) +
+  theme_classic() +
+  geom_text_repel(data = res05hef2dataoutliersgenes, aes(x = log2FoldChange.x, y = -log10(padj.x), col = diffexpressed, label = predicted.gene)) +
+  geom_vline(xintercept = c(-2, 2), col = "black", linetype = 2) +
+  scale_color_manual(values = c("#084748", "grey", "#9B2C00")) +
+  scale_shape_manual(values = c("circle", "triangle")) +  # Define the triangle symbol
+  theme(
+    panel.background = element_blank(),
+    strip.background = element_blank(),
+    strip.text = element_blank(),
+    axis.line = element_line(size = 0.3, colour = "black"),
+    axis.text.x = element_text(size = 10, vjust = 0.5, hjust = 1),
+    axis.text.y = element_text(size = 10, hjust = 0.5),
+    axis.title.y = element_text(size = 10),
+    aspect.ratio = 8/6,
+    legend.title = element_blank(),
+    axis.ticks = element_line(colour = "black", size = 0.3)
+  )
+
+print(p)
+
+```
+
+
+
+```{r}
+res05hef2dataoutliers <-  res05hef2data %>% filter(log2FoldChange > 5 & diffexpressed != "NO" | log2FoldChange < -5 & diffexpressed != "NO" | -log10(padj) > 10) #| (log2FoldChange < 45 & flipper_length_mm <180) )
+
+res05hef2candgene_names <- read.csv(file ="/Users/dshipilina/GitHub/VanessaExpression/res05hef2full_top20_cand_genes_polishing.csv",header = TRUE)
+
+```
+
+
+
+
+
+```{r}
+res05hef2candgene_names <- read.csv(file ="/Users/dshipilina/GitHub/VanessaExpression/res05hef2full_top20_cand_genes_polishing.csv",header = TRUE)
+res05hef2dataoutliersgenes <- left_join(res05hef2dataoutliers, res05hef2candgene_names, by=c('X'='name'))
+res05hef2dataoutliersgenes
+```
+
+
+### Adding gene names
+```{r}
+resLRhef2bestgenes <- resLRhef2[order(resLRhef2$padj),]
+resLRhef2best20genes <- head(resLRhef2bestgenes, 20)
+#res05hef2data(order[res05hef2data$padj])
+```
+
+
+
+```{r}
+res <- resLRhef2[order(resLRhef2$padj),]
+head(res, 10)
+
+res2 <- resLRhef2[order(resLRhef2$log2FoldChange),]
+head(res2, 10)
+```
+
+
+Setting up p-value to 0.05
+```{r}
+res05hef2 <- results(ddsLRhef2, alpha=0.05) #, na.rm=TRUE)
+summary(res05hef2)
+```
+
+
+#### Candidate genes
+Selecting upregulated genes of interest based on arbitrary (stringent) criteria
+```{r}
+#res05hef2[order(res05hef2$padj),]
+res05hef2<-na.omit(res05hef2)
+res05hef2topUp <- res05hef2[res05hef2$padj <= 0.05 & res05hef2$log2FoldChange > 2, ]
+res05hef2topDown <- res05hef2[res05hef2$padj <= 0.05 & res05hef2$log2FoldChange < -2, ]
+length(row.names(res05hef2topUp))
+length(row.names(res05hef2topDown))
+
+res05hef2topUpgenenames <- row.names(res05hef2topUp)
+res05hef2topUpgenenames
+write.csv(res05hef2topUpgenenames,file="res05hef2topUpgenenames.tsv",row.names=F)
+
+res05hef2topDowngenenames <- row.names(res05hef2topDown)
+res05hef2topDowngenenames
+write.csv(res05hef2topDowngenenames,file="res05hef2topDowngenenames.tsv",row.names=F)
+
+
+res05hef2topUpfun <-functional_annotation[is.element(functional_annotation$GeneID,c(row.names(res05hef2topUp))),]
+#write.csv(res05hef2topUpfun,file="cand_genes_adult_he_topUp2.tsv",row.names=T)
+res05hef2topDownfun <- functional_annotation[is.element(functional_annotation$GeneID,c(row.names(res05hef2topDown))),]
+#write.csv(res05hef2topDownfun,file="cand_genes_adult_he_topDown2.tsv",row.names=T)
+
+```
+
+
+```{r}
+resLRhef2bestgenes <- resLRhef2[order(resLRhef2$padj),]
+resLRhef2best20genes <- head(resLRhef2bestgenes, 20)
+
+res05hef2<-na.omit(res05hef2)
+res05hef2best20topUp <- res05hef2[res05hef2$padj <= 0.05 & res05hef2$log2FoldChange > 2, ]
+resLRhef2best20Upgenes <- head(res05hef2best20topUp, 20)
+resLRhef2best20Upgenes
+write.csv(resLRhef2best20Upgenes,file="resLRhef2best20Upgenes.tsv",row.names=T)
+
+
+res05hef2best20topDown <- res05hef2[res05hef2$padj <= 0.05 & res05hef2$log2FoldChange < - 2, ]
+resLRhef2best20Downgenes <- head(res05hef2best20topDown, 20)
+resLRhef2best20Downgenes
+write.csv(resLRhef2best20Downgenes,file="resLRhef2best20Downgenes.tsv",row.names=T)
+
+#res05hef2data(order[res05hef2data$padj])
+```
+
+
+
+
+```{r}
+cand_genes_adult_he_top <-c(row.names(res05hef2topUp),row.names(res05hef2topDown))
+length(cand_genes_adult_he_top)
+#par(mfrow=c(2,3))
+#for (x in cand_genes_adult_he_top) {
+#  plotCounts(ddsLRhef2, gene=x, intgroup="condition")
+#}
+
+
+###### PLOTTING CANDIDATE GENES #######
+ 
+par(mfrow=c(1,2))
+
+#plotCounts(ddsLRhef2, gene="Vcard_DToL07064", intgroup="condition")
+#plotCounts(ddsLRhef2, gene="Vcard_DToL09601", intgroup="condition")
+plotCounts(ddsLRhef2, gene="Vcard_DToL01495", intgroup="condition")
+#plotCounts(ddsLRhef2, gene="Vcard_DToL01126", intgroup="condition")
+#plotCounts(ddsLRhef2, gene="Vcard_DToL02425", intgroup="condition")
+#plotCounts(ddsLRhef2, gene="Vcard_DToL02971", intgroup="condition")
+plotCounts(ddsLRhef2, gene="Vcard_DToL04426", intgroup="condition")
+#plotCounts(ddsLRhef2, gene="Vcard_DToL05110", intgroup="condition")
+plotCounts(ddsLRhef2, gene="Vcard_DToL06375", intgroup="condition")
+plotCounts(ddsLRhef2, gene="Vcard_DToL09542", intgroup="condition")
+#plotCounts(ddsLRhef2, gene="Vcard_DToL11161", intgroup="condition")
+#plotCounts(ddsLRhef2, gene="Vcard_DToL13323", intgroup="condition")
+#plotCounts(ddsLRhef2, gene="Vcard_DToL13698", intgroup="condition")
+#plotCounts(ddsLRhef2, gene="Vcard_DToL14898", intgroup="condition")
+#plotCounts(ddsLRhef2, gene="Vcard_DToL17591", intgroup="condition")
+
+
+
+cand_genes_adult_he_best_list <- c("Vcard_DToL04426","Vcard_DToL01495","Vcard_DToL06375","Vcard_DToL09542")
+cand_genes_adult_he_best <- functional_annotation[is.element(functional_annotation$GeneID,cand_genes_adult_he_best_list),]
+cand_genes_adult_he_best
+```
+
+
+
+
+## Testing overlaps between gene sets 
+
+```{r}
+length(row.names(res05hef2topDown))
+length(row.names(res05hef2topUp))
+length(row.names(res05abftopDown))
+length(row.names(res05abftopUp))
+
+# "Downregulated in heads and abdomens with limited resource"
+intersect(row.names(res05hef2topDown),row.names(res05abftopDown))
+# Upregulated in heads and abdomens with limited resource
+intersect(row.names(res05abftopUp),row.names(res05hef2topUp))
+# Downregulated in heads, upregulated in abdomens with limited resource
+intersect(row.names(res05abftopUp),row.names(res05hef2topDown))
+#Upregulated in heads, downregulated in abdomens with limited resource
+intersect(row.names(res05abftopDown),row.names(res05hef2topUp))
+#res05hef2topUp
+```
+
+
+```{bash}
+
+echo "Downregulated in heads and abdomens with limited resource"
+comm -12 cand_genes_adult_ab_topDown.tsv cand_genes_adult_he_topDown.tsv
+
+echo "Upregulated in heads and abdomens with limited resource"
+comm -12 cand_genes_adult_ab_topUp.tsv cand_genes_adult_he_topUp.tsv
+
+echo "Downregulated in heads, upregulated in abdomens with limited resource"
+comm -12 cand_genes_adult_ab_topUp.tsv cand_genes_adult_he_topDown.tsv
+
+echo "Upregulated in heads, downregulated in abdomens with limited resource"
+comm -12 cand_genes_adult_ab_topDown.tsv cand_genes_adult_he_topUp.tsv
+
+```
+
+```{bash}
+awk '{print $1}' CandidateGenesExpandedOrthogroups.txt > CandidateGenesExpandedOrthogroups.tsv
+
+echo "Downregulated in heads limited resource"
+comm -12 LRhetopDowngenenames.tsv CandidateGenesExpandedOrthogroups.tsv
+
+echo "Upregulated in heads limited resource"
+comm -12 LRhetopUpgenenames.tsv CandidateGenesExpandedOrthogroups.tsv
+
+echo "Downregulated in abdomens limited resource"
+comm -12 LRabtopDowngenenames.tsv CandidateGenesExpandedOrthogroups.tsv
+
+echo "Upregulated in abdomens limited resource"
+comm -12 LRabtopUpgenenames.tsv CandidateGenesExpandedOrthogroups.tsv
+```
+
+
+```{r}
+overlap_head_down <- res05hef2data$X[res05hef2data$log2FoldChange < -2 & res05hef2data$padj < 0.05]
+length(overlap_head_down)
+overlap_head_up <- res05hef2data$X[res05hef2data$log2FoldChange > 2 & res05hef2data$padj < 0.05]
+length(overlap_head_up)
+overlap_abdom_down <- res05abfdata$X[res05abfdata$log2FoldChange < -2 & res05abfdata$padj < 0.05]
+length(overlap_abdom_down)
+overlap_abdom_up <- res05abfdata$X[res05abfdata$log2FoldChange > 2 & res05abfdata$padj < 0.05]
+length(overlap_abdom_up)
+```
+
+
+Trying genes overlap
+```{r}
+#gs.RNASeq <- 18860
+allgenes_count <- 11266
+go.obj <- newGeneOverlap(overlap_head_down,
+                          overlap_abdom_down,
+                          genome.size=allgenes_count)
+
+
+go.obj
+
+go.obj <- testGeneOverlap(go.obj)
+go.obj
+
+go.obj <- newGeneOverlap(overlap_head_up,
+                          overlap_abdom_up,
+                          genome.size=allgenes_count)
+
+
+go.obj
+
+go.obj <- testGeneOverlap(go.obj)
+go.obj
+```
+
+
+
+## TopGO analysis
+
+```{r}
+library(topGO)
+library(ggplot2)
+```
+
+Creating topGO object
+```{r}
+#create an object with all gene identifiers and corresponding GO-terms
+#readMappings(file, sep = "\t", IDsep = ",")
+geneID2GO <- readMappings(file="Vanessa_TopGo_reference_base_filtered.tsv", sep = "\t", IDsep = ",")
+str(head(geneID2GO))
+
+#gene universe, vector of gene names
+geneNames <- names(geneID2GO)
+head(geneNames)
+
+#read the list of genes of interest res05hef2topDowngenenames
+#x<-res05hef2topDowngenenames
+#write.csv(x,file="x.tsv",row.names=F)
+```
+
+Prepping file with all genes of interest
+
+```{r}
+#read the list of genes of interest res05hef2topDowngenenames
+y<-res05hef2topDowngenenames
+write.csv(y,file="hef2topDowngenenames.tsv",row.names=F)
+
+x<-res05hef2topUpgenenames
+write.csv(x,file="hef2topUpgenenames.tsv",row.names=F)
+```
+
+```{r}
+cand_adult_all <- c(row.names(res05hef2topUp),row.names(res05hef2topDown),row.names(res05abftopDown),row.names(res05abftopUp))
+write.csv(cand_adult_all,file="cand_genes_adult_topGO.tsv",row.names = F)
+```
+
+
+```{bash}
+#tail -n +2 hef2topDowngenenames.tsv > hef2topDowngenename.tsv
+#tail -n +2 hef2topUpgenenames.tsv > hef2topUpgenename.tsv
+
+#cat hef2topDowngenename.tsv hef2topUpgenename.tsv > LRhefgenename.tsv
+
+tail -n +2 cand_genes_adult_topGO.tsv | sed 's/\"//' | sed 's/\"//' | awk '{print $1"-RA"}' > cand_genes_adult_topGOclean.tsv
+```
+
+
+```{r}
+candidate_genes <- read.table("cand_genes_adult_topGOclean.tsv", header = F)
+colnames(candidate_genes) <- "geneid"
+#cand_adult_all
+#head(candidate_genes)
+
+candidate_genes <- as.character(candidate_genes$geneid)
+geneList <- factor(as.integer(geneNames %in% candidate_genes))
+names(geneList) <- geneNames
+head(geneList)
+
+##Biological function
+#create the topGOdata object
+GO_dataAdult_BP <- new("topGOdata", 
+               ontology="BP", 
+               allGenes=geneList, 
+               annot=annFUN.gene2GO, 
+               gene2GO=geneID2GO, 
+               nodeSize=1)
+```
+
+
+
+
+```
+#read the list of genes of interest 
+#"when only a list of interesting genes is provided, 
+#the user can use only tests statistics that are based on gene counts, 
+#like Fisher’s exact test, Z score and alike."
+##Algorithms:
+#classic uses all GO terms separately
+#elim eliminates genes from parentGOterms if child is more specific (bottom up analysis)
+#weight trying to determin if GOterm is better representing the list of interesting genes (is more enriched) than any other node from its neighborhood
+#parentChild 
+
+Dasha_topGO <- function(gene_list){
+
+candidate_genes <- read.table(gene_list, header = F)
+colnames(candidate_genes) <- "geneid"
+#head(candidate_genes)
+
+candidate_genes <- as.character(candidate_genes$geneid)
+geneList <- factor(as.integer(geneNames %in% candidate_genes))
+names(geneList) <- geneNames
+#head(geneList)
+
+##Biological function
+#create the topGOdata object
+GO_data_BP <- new("topGOdata", 
+               ontology="BP", 
+               allGenes=geneList, 
+               annot=annFUN.gene2GO, 
+               gene2GO=geneID2GO, 
+               nodeSize=1)
+
+BP_resultFisher_weight01 <- runTest(GO_data_BP, algorithm = "weight01", statistic = "fisher")
+
+allGO = usedGO(object = GO_data_BP)
+allRes_BP <- GenTable(GO_data_BP, 
+                   weight01Fisher = BP_resultFisher_weight01,
+                   orderBy = "weight01Fisher", 
+                   ranksOf = "weight01Fisher", 
+                   topNodes = length(allGO),
+                   numChar=1000)
+
+#multiple test correction, method Benjamini-Hochberg
+allRes_BP$p_adj <- p.adjust(allRes_BP$weight01Fisher, method = "fdr")
+allRes_BP$GO_class <- "BP"
+
+###Molecular function
+#create the topGOdata object
+GO_data_MF <- new("topGOdata", 
+               ontology="MF", 
+               allGenes=geneList, 
+               annot=annFUN.gene2GO, 
+               gene2GO=geneID2GO, 
+               nodeSize=1)
+
+MF_resultFisher_weight01 <- runTest(GO_data_MF, algorithm = "weight01", statistic = "fisher")
+
+allGO = usedGO(object = GO_data_MF)
+allRes_MF <- GenTable(GO_data_MF, 
+                   weight01Fisher = MF_resultFisher_weight01,
+                   orderBy = "weight01Fisher", 
+                   ranksOf = "weight01Fisher", 
+                   topNodes = length(allGO),
+                   numChar=1000)
+
+allRes_MF$weight01Fisher <- as.numeric(allRes_MF$weight01Fisher)
+
+#multiple test correction, method Benjamini-Hochberg
+allRes_MF$p_adj <- p.adjust(allRes_MF$weight01Fisher, method = "fdr")
+allRes_MF$GO_class <- "MF"
+
+###Cellular compartment
+#create the topGOdata object
+GO_data_CC <- new("topGOdata", 
+               ontology="CC", 
+               allGenes=geneList, 
+               annot=annFUN.gene2GO, 
+               gene2GO=geneID2GO, 
+               nodeSize=1)
+
+CC_resultFisher_weight01 <- runTest(GO_data_CC, algorithm = "weight01", statistic = "fisher")
+
+allGO = usedGO(object = GO_data_CC)
+allRes_CC <- GenTable(GO_data_CC, 
+                   weight01Fisher = CC_resultFisher_weight01,
+                   orderBy = "weight01Fisher", 
+                   ranksOf = "weight01Fisher", 
+                   topNodes = length(allGO),
+                   numChar=1000)
+
+allRes_CC$weight01Fisher <- as.numeric(allRes_CC$weight01Fisher)
+#multiple test correction, method Benjamini-Hochberg
+allRes_CC$p_adj <- p.adjust(allRes_CC$weight01Fisher, method = "fdr")
+allRes_CC$GO_class <- "CC"
+
+#assembling all the data
+allRes_all_comb <- rbind(allRes_BP[allRes_BP$weight01Fisher<=0.05, ], allRes_CC[allRes_CC$weight01Fisher<=0.05, ], allRes_MF[allRes_MF$weight01Fisher<=0.05, ])
+
+return(allRes_all_comb)
+
+
+```
+
+
+
+
+
+```{r}
+adul_resultFisher_weight01 <- runTest(GO_dataAdult_BP, algorithm = "weight01", statistic = "fisher")
+
+#BP_resultFisher_classic <- runTest(GO_dataLTR_BP, algorithm = "classic", statistic = "fisher")
+#BP_resultFisher_classic
+
+#BP_resultFisher_parentChild <- runTest(GO_dataLTR_BP, algorithm = "parentChild", statistic = "fisher")
+#BP_resultFisher_parentChild
+
+#BP_resultFisher_elim <- runTest(GO_dataLTR_BP, algorithm = "elim", statistic = "fisher")
+#BP_resultFisher_elim
+
+allGO = usedGO(object = GO_dataAdult_BP)
+allResAdult_BP <- GenTable(GO_dataAdult_BP, 
+                   weight01Fisher = adul_resultFisher_weight01, 
+                   orderBy = "weight01Fisher", 
+                   ranksOf = "weight01Fisher", 
+                   topNodes = length(allGO),
+                   numChar=1000)
+
+allResAdult_BP$weight01Fisher <- as.numeric(allResAdult_BP$weight01Fisher)
+allResAdult_BP[allResAdult_BP$weight01Fisher<=0.05, ]
+
+#allResLTR_BP$parentChFisher <- as.numeric(allResLTR_BP$parentChFisher)
+#allResLTR_BP[allResLTR_BP$parentChFisher<=0.05, ]
+
+#allResLTR_BP$elimFisher <- as.numeric(allResLTR_BP$elimFisher)
+#allResLTR_BP[allResLTR_BP$elimFisher<=0.05, ]
+
+saveRDS(allResAdult_BP, file = "allResAdult_BP.rds")
+
+```
+
+
+Multiple test correction
+```{r}
+allResAdult_BP$p_adj_fdr <- p.adjust(allResAdult_BP$weight01Fisher, method = "fdr")
+allResAdult_BP$p_adj_holm <- p.adjust(allResAdult_BP$weight01Fisher, method = "holm")
+allResAdult_BP$p_adj_bonferroni <- p.adjust(allResAdult_BP$weight01Fisher, method = "bonferroni")
+allResAdult_BP$p_adj_BH <- p.adjust(allResAdult_BP$weight01Fisher, method = "BH")
+
+allResAdult_BP
+```
+
+Adding gene names
+```{r}
+allResAdult_BP$genes <- sapply(allResAdult_BP$GO.ID,
+                          function(x)
+                          {
+                              genes_sel <- genesInTerm(GO_dataAdult_BP, x)
+                              genes_sel[[1]][genes_sel[[1]] %in% candidate_genes]
+                          })
+allResAdult_BP$genes <- vapply(allResAdult_BP$genes, paste, collapse =",", character(1L))
+
+topGOAdult_BP <- allResAdult_BP[allResAdult_BP$weight01Fisher<=0.01, ]
+```
+
+
+```{r}
+topGOAdult_BPtst <- topGOAdult_BP
+
+for(i in 1:nrow(topGOAdult_BPtst)) {       # for-loop over rows
+  #topGOAdult_BPtst$Annotated[i] <- topGOAdult_BPtst$Annotated[i] + 100
+  parsed_genes<-unlist(strsplit(topGOAdult_BPtst$genes[i], ","))
+  #print(parsed_genes)
+  print(length(intersect(parsed_genes,res05hef2topUptest)))
+  topGOAdult_BPtst$abftopUp[i] <- length(intersect(parsed_genes,paste(res05abftopUpgenenames,"-RA", sep = "")))
+  topGOAdult_BPtst$abftopDown[i] <- length(intersect(parsed_genes,paste(res05abftopDowngenenames,"-RA", sep = "")))
+  topGOAdult_BPtst$hef2topUp[i] <- length(intersect(parsed_genes,paste(res05hef2topUpgenenames,"-RA", sep = "")))
+  topGOAdult_BPtst$hef2topDown[i] <- length(intersect(parsed_genes,paste(res05hef2topDowngenenames,"-RA", sep = "")))
+  #print(intersect(parsed_genes,res05hef2topUptest))
+}
+
+
+
+topGOAdult_BPtst$up_genes <- topGOAdult_BPtst$hef2topUp + topGOAdult_BPtst$abftopUp
+topGOAdult_BPtst$down_genes <- topGOAdult_BPtst$hef2topDown + topGOAdult_BPtst$abftopDown
+
+topGOAdult_BPtst
+
+#res05hef2topUp <- read.csv(file ="/Users/dshipilina/GitHub/VanessaExpression/cand_genes_adult_he_topUp2.tsv",header = FALSE)
+#res05hef2topUptest <- paste(res05hef2topUp$V2,"-RA", sep = "")
+#res05hef2topUptest
+
+
+```
+
+
+
+
+
+```{r}
+topGOAdult_BP
+#topGOAdult_BP$genes[c(row.names(res05hef2topUp))]
+topGOAdult_BP$genes[c("Vcard_DToL05597-RA,Vcard_DToL07962-RA,Vcard_DToL07964-RA")]
+
+
+#topGOAdult_BP$splt[6]<- unlist(strsplit(topGOAdult_BP$genes[6], ","))
+#topGOAdult_BP
+#unlist(strsplit(enr_resAdult$geneID[6], "/"))
+
+topGOAdult_BP
+write.csv(topGOAdult_BP,file="topGOAdult_BP.csv",row.names=T)
+```
+
+```{bash}
+#grep -o "Vcard_DToL09468-RA" topGOAdult_BP.tsv
+awk -F "\"" '{print $8,$9,$10}' topGOAdult_BP.tsv >  topGOAdult_BPprep.tsv
+awk -F "," '{print $0}' topGOAdult_BPprep.tsv
+grep "Vcard_DToL06760-RA" topGOAdult_BPprep.tsv || echo "no match" >&2
+```
+
+```{bash}
+
+while read i; do echo $i |grep -o -f "Vcard_DToL06760-RA"| wc -l;  done < topGOAdult_BPprp.csv
+
+```
+
+
+
+
+```{r}
+#topGOAdult_BP <- allResAdult_BP[allResAdult_BP$weight01Fisher<=0.01, ]
+#nrow(allResAdult_BP[allResAdult_BP$weight01Fisher<=0.01, ])
+
+
+topGOAdult_BPtst$GO_descr <- paste(topGOAdult_BPtst$Term," (",topGOAdult_BPtst$GO.ID,")", sep = "")
+
+plot_topGoAdulttst=ggplot(topGOAdult_BPtst, aes(x=reorder(GO_descr, -Significant), y=up_genes)) + geom_bar(stat="identity", fill="#512887") 
+
+#plot_topGoAdulttst <- ggplot() + geom_bar(topGOAdult_BPtst, aes(x=GO_descr, y=Significant)) + geom_bar(topGOAdult_BPtst, aes(x=GO_descr, y=up_genes)) 
+
+#ggsave(plot = plot_topGoAdult, "topGOAdult_BP.pdf")
+plot_topGoAdulttst
+```
+
+```{r}
+allResAdult_BP[allResAdult_BP$weight01Fisher<=0.01, ]
+
+```
+
+
+
+#### Figure 3D
+
+```{r}
+
+#topGOAdult_BP <- readRDS("allResAdult_BP.rds")
+
+allResAdult_BP <- readRDS("allResAdult_BP.rds")
+
+topGOAdult_BP <- allResAdult_BP[allResAdult_BP$weight01Fisher<=0.01, ]
+nrow(allResAdult_BP[allResAdult_BP$weight01Fisher<=0.01, ])
+
+
+topGOAdult_BP$GO_descr <- paste(topGOAdult_BP$Term," (",topGOAdult_BP$GO.ID,")", sep = "")
+
+plot_topGoAdult=ggplot(topGOAdult_BP, aes(x=reorder(GO_descr, -Significant), y=Significant)) + geom_bar(stat="identity", fill="#A38A54") + 
+  theme(panel.background = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_blank(),
+        axis.line = element_line(size = 0.2, colour = "black"),
+        axis.text.x = element_text(size = 10, angle = 90, vjust = 0.5, hjust = 1),
+        axis.text.y = element_text(size = 10, angle = 90, hjust = 0.5),
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 10, angle = 90),
+        legend.title = element_blank(),
+        aspect.ratio = 1/4.5,
+        legend.text = element_text(size = 10, angle = 90, vjust = 0.5),
+        legend.position = "top",
+        axis.ticks = element_line(colour = "black", size = 0.1))
+
+
+ggsave(plot = plot_topGoAdult, "topGOAdult_BPx.pdf")
+plot_topGoAdult
+```
+```{r}
+allResAdult_BP[allResAdult_BP$weight01Fisher<=0.01, ]
+write.csv(allResAdult_BP[allResAdult_BP$weight01Fisher<=0.01, ],file="allResAdult_BP.csv",row.names=T)
+```
+
+```{r}
+# Load the ggplot2 library
+library(ggplot2)
+
+# Read the CSV file
+data <- read.csv("KEGG_candgnes.csv")
+
+# Sort the data by column3
+data <- data[order(data$parent.term..level.up.), ]
+
+# Create a histogram with specified requirements
+plot <- ggplot(data, aes(x = reorder(term, factor(parent.term..level.up.)), y = Number.of.genes, fill = factor(parent.term..level.up.))) +
+  geom_bar(stat = "identity") +
+  coord_flip() +  # Rotate the histogram by 90 degrees
+  labs(x = "Category (Column 1)", y = "Count (Column 4)", fill = "Category (Column 3)") +
+  theme_minimal()  # Customize the plot's theme as needed
+
+# Display the plot
+print(plot)
+```
+
+```{r}
+# Load the ggplot2 library
+library(ggplot2)
+
+# Create a dataset
+data <- data.frame(
+  term = c(
+    "Methabolism of xenobiotics by cytochrome P450",
+    "Drug metabolism - other enzymes",
+    "Drug metabolism - cytochrome P450",
+    "Retinol metabolism",
+    "Folate biosynthesis",
+    "Porphyrin metabolism",
+    "Microbial metabolism in diverse environments",
+    "E3.1.6.1; arylsulfatase",
+    "Steroid hormone biosynthesis",
+    "Arachidonic acid metabolism",
+    "Chemical carcinogenesis - DNA adducts",
+    "Pentose and glucuronate interconversions",
+    "Ascorbate and aldarate metabolism",
+    "Glycolysis / Gluconeogenesis",
+    "Fructose and mannose metabolism",
+    "Pentose phosphate pathway",
+    "Alanine, aspartate and glutamate metabolism"
+  ),
+  KEGG = c(9111, 9111, 9111, 9108, 9108, 9108, 9100, 9103, 9103, 9103, 9160, 9101, 9101, 9101, 9101, 9101, 9105),
+  parent_term = c(
+    "Xenobiotics biodegradation and metabolism",
+    "Xenobiotics biodegradation and metabolism",
+    "Xenobiotics biodegradation and metabolism",
+    "Metabolism of cofactors and vitamins",
+    "Metabolism of cofactors and vitamins",
+    "Metabolism of cofactors and vitamins",
+    "Metabolism",
+    "Lipid metabolism",
+    "Lipid metabolism",
+    "Lipid metabolism",
+    "Human Diseases",
+    "Carbohydrate metabolism",
+    "Carbohydrate metabolism",
+    "Carbohydrate metabolism",
+    "Carbohydrate metabolism",
+    "Carbohydrate metabolism",
+    "Amino acid metabolism"
+  ),
+  Number_of_genes = c(13, 9, 7, 7, 7, 6, 11, 13, 7, 6, 12, 10, 7, 6, 4, 4, 4)
+)
+
+# Sort the dataset by parent_term and Number_of_genes in ascending order
+data <- data[order(data$parent_term, data$Number_of_genes), ]
+
+# Define custom colors for the fill aesthetic
+custom_colors <- c(
+  "Xenobiotics biodegradation and metabolism" = "#1f77b4",
+  "Metabolism of cofactors and vitamins" = "#ff7f0e",
+  "Metabolism" = "#2ca02c",
+  "Lipid metabolism" = "#d62728",
+  "Human Diseases" = "#9467bd",
+  "Carbohydrate metabolism" = "#8c564b",
+  "Amino acid metabolism" = "#e377c2"
+)
+
+# Create a histogram with sorted values and custom colors
+plot <- ggplot(data, aes(x = factor(term, levels = term), y = Number_of_genes, fill = factor(parent_term))) +
+  geom_bar(stat = "identity") +
+  coord_flip() + 
+  scale_fill_manual(values = custom_colors) +  # Set custom fill colors
+  labs(x = "Category (term)", y = "Count (Number_of_genes)", fill = "Category (parent_term)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))  # Rotate x-axis labels
+
+# Display the plot
+print(plot)
+
+```
+
+
+theme(panel.background = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_blank(),
+        axis.line = element_line(size = 0.2, colour = "black"),
+        axis.text.x = element_text(size = 10, angle = 90, vjust = 0.5, hjust = 1),
+        axis.text.y = element_text(size = 10, angle = 90, hjust = 0.5),
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 10, angle = 90),
+        legend.title = element_blank(),
+        aspect.ratio = 1/4.5,
+        legend.text = element_text(size = 10, angle = 90, vjust = 0.5),
+        legend.position = "top",
+        axis.ticks = element_line(colour = "black", size = 0.1))
+
+```{r}
+custom_colors <- c(
+  "Xenobiotics biodegradation and metabolism" = "#9B2C00",
+  "Metabolism of cofactors and vitamins" = "#F96513",
+  "Metabolism" = "#FDD458",
+  "Lipid metabolism" = "#A38A54",
+  "Human Diseases" = "#8CCFBD",
+  "Carbohydrate metabolism" = "#256B5F",
+  "Amino acid metabolism" = "#084748"
+)
+
+# Create a histogram with sorted values and custom colors
+plot <- ggplot(data, aes(x = factor(term, levels = term), y = Number_of_genes, fill = factor(parent_term))) +
+  geom_bar(stat = "identity") +
+  coord_flip() + 
+  scale_fill_manual(values = custom_colors) +  # Set custom fill colors
+  labs(x = "", y = "Number of genes", fill = "Category (parent GO term)") +
+  theme_minimal() + theme(aspect.ratio = 2.4)
+# Rotate x-axis labels
+
+ggsave(plot = plot, "KEGG_adult.pdf")
+
+# Display the plot
+print(plot)
+
+```
+
+
+
+
+
+```{r}
+# Load the ggplot2 library
+#library(ggplot2)
+
+# Assuming 'term' and 'parent.term..level.up.' should be factors
+#data1$term <- as.factor(data1$term)
+#data1$parent.term..level.up. <- as.factor(data1$parent.term..level.up.)
+
+# Assuming 'Number.of.genes' should be numeric
+#data1$Number.of.genes <- as.numeric(data1$Number.of.genes)
+
+# Read the CSV file
+data1 <- read.csv("KEGG_candgnes.csv")
+
+data1 <- data1[order(data1$Number.of.genes), ]
+
+# Create a histogram with specified aesthetics and sorted by column3
+plot <- ggplot(data1, aes(x = term, y =Number.of.genes, fill = factor(parent.term..level.up.))) +
+  geom_bar(stat = "identity") +
+  coord_flip() +  # Rotate the histogram by 90 degrees
+  labs(x = "Category (Column 1)", y = "Count (Column 4)", fill = "Category (Column 3)") +
+  theme_minimal()  # Customize the plot's theme as needed
+
+# Display the plot
+print(plot)
+```
+
+
+```{r}
+
+
+library(data.table)
+library(ggplot2)
+
+data <- fread("KEGG_candgnes.csv", encoding = "UTF-8")
+
+# Create a histogram without sorting values on the x-axis
+plot <- ggplot(data, aes(x = factor(term, levels = term), y = Number.of.genes, fill = factor(parent.term..level.up.))) +
+  geom_bar(stat = "identity") +
+  labs(x = "Category (term)", y = "Count (Number.of.genes)", fill = "Category (parent.term..level.up.)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))  # Rotate x-axis labels
+
+# Display the plot
+print(plot)
+
+```
+
+```{r}
+# Load the ggplot2 library
+library(ggplot2)
+
+# Create the dataset
+data <- data.frame(
+  term = c(
+    "Methabolism of xenobiotics by cytochrome P450",
+    "Drug metabolism - other enzymes",
+    "Drug metabolism - cytochrome P450",
+    "Retinol metabolism",
+    "Folate biosynthesis",
+    "Porphyrin metabolism",
+    "Microbial metabolism in diverse environments",
+    "E3.1.6.1; arylsulfatase",
+    "Steroid hormone biosynthesis",
+    "Arachidonic acid metabolism",
+    "Chemical carcinogenesis - DNA adducts",
+    "Pentose and glucuronate interconversions",
+    "Ascorbate and aldarate metabolism",
+    "Glycolysis / Gluconeogenesis",
+    "Fructose and mannose metabolism",
+    "Pentose phosphate pathway",
+    "Alanine, aspartate and glutamate metabolism"
+  ),
+  KEGG = c(9111, 9111, 9111, 9108, 9108, 9108, 9100, 9103, 9103, 9103, 9160, 9101, 9101, 9101, 9101, 9101, 9105),
+  parent_term = c(
+    "Xenobiotics biodegradation and metabolism",
+    "Xenobiotics biodegradation and metabolism",
+    "Xenobiotics biodegradation and metabolism",
+    "Metabolism of cofactors and vitamins",
+    "Metabolism of cofactors and vitamins",
+    "Metabolism of cofactors and vitamins",
+    "Metabolism",
+    "Lipid metabolism",
+    "Lipid metabolism",
+    "Lipid metabolism",
+    "Human Diseases",
+    "Carbohydrate metabolism",
+    "Carbohydrate metabolism",
+    "Carbohydrate metabolism",
+    "Carbohydrate metabolism",
+    "Carbohydrate metabolism",
+    "Amino acid metabolism"
+  ),
+  Number_of_genes = c(13, 9, 7, 7, 7, 6, 11, 13, 7, 6, 12, 10, 7, 6, 4, 4, 4)
+)
+
+# Create a histogram without sorting values on the x-axis
+plot <- ggplot(data, aes(x = factor(term, levels = term), y = Number_of_genes, fill = factor(parent_term))) +
+  geom_bar(stat = "identity") +
+  coord_flip() + 
+  labs(x = "Category (term)", y = "Count (Number_of_genes)", fill = "Category (parent_term)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))  # Rotate x-axis labels
+
+# Display the plot
+print(plot)
+
+
+```
+
+
+
+
+
+# Load the ggplot2 library
+library(ggplot2)
+
+# Read the CSV file
+data <- read.csv("KEGG_candgenes.csv")
+
+# Create a histogram with specified aesthetics and sorted by column3
+plot <- ggplot(data, aes(x = reorder(factor(column1), column3), y = column4, fill = factor(column3))) +
+  geom_bar(stat = "identity") +
+  coord_flip() +  # Rotate the histogram by 90 degrees
+  labs(x = "Category (Column 1)", y = "Count (Column 4)", fill = "Category (Column 3)") +
+  theme_minimal()  # Customize the plot's theme as needed
+
+# Display the plot
+print(plot)
+
+```{r}
+# Load the ggplot2 library
+library(ggplot2)
+
+# Read the example data
+data <- read.table(text = "                                      term KEGG                    parent.term..level.up. Number.of.genes
+17   'Alanine, aspartate and glutamate metabolism' 9105                     'Amino acid metabolism'               4
+12      'Pentose and glucuronate interconversions' 9101                   'Carbohydrate metabolism'              10
+13             'Ascorbate and aldarate metabolism' 9101                   'Carbohydrate metabolism'               7
+14                  'Glycolysis / Gluconeogenesis' 9101                   'Carbohydrate metabolism'               6
+15               'Fructose and mannose metabolism' 9101                   'Carbohydrate metabolism'               4
+16                     'Pentose phosphate pathway' 9101                   'Carbohydrate metabolism'               4
+11         'Chemical carcinogenesis - DNA adducts' 9160                            'Human Diseases'              12
+8                        'E3.1.6.1; arylsulfatase' 9103                          'Lipid metabolism'              13
+9                   'Steroid hormone biosynthesis' 9103                          'Lipid metabolism'               7
+10                   'Arachidonic acid metabolism' 9103                          'Lipid metabolism'               6
+7   'Microbial metabolism in diverse environments' 9100                                'Metabolism'              11", header = TRUE)
+
+# Create a histogram without sorting values on the x-axis
+plot <- ggplot(data, aes(x = factor(term, levels = term), y = Number.of.genes, fill = factor(parent.term..level.up.))) +
+  geom_bar(stat = "identity") +
+  labs(x = "Category (term)", y = "Count (Number.of.genes)", fill = "Category (parent.term..level.up.)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))  # Rotate x-axis labels
+
+# Display the plot
+print(plot)
+
+```
+
+
+
+
+```{r}
+#library("Rgraphviz")
+par(cex = 0.5)
+showSigOfNodes(GO_dataAdult_BP, score(adul_resultFisher_weight01), firstSigNodes = 43, useInfo ='all')
+printGraph(GO_dataAdult_BP, adul_resultFisher_weight01, firstSigNodes = 43, fn.prefix = "tGO", useInfo = "all", pdfSW = TRUE)
+```
+
+```{r}
+#library("Rgraphviz")
+par(cex = 0.5)
+showSigOfNodes(GO_dataAdult_BP, score(topGOAdult_BP$weight01Fisher), firstSigNodes = 20, useInfo ='all')
+#printGraph(GO_dataAdult_BP, adul_resultFisher_weight01, firstSigNodes = 20, fn.prefix = "tGO", useInfo = "all", pdfSW = TRUE)
+```
+
+
+
+
+
+## KEGG enrichment test
+
+```{r}
+
+### KEGG data prep
+
+# get the necessary information from the eggNOG output file
+fun_ann2 <- read.csv(file ="/Users/dshipilina/GitHub/VanessaExpression/vcard.func.annot.csv",header = FALSE)
+
+#get columns 1 (query) and 9 (KO terms)
+kegg_data2 <- fun_ann2[c(1,13)]
+kegg_data2
+
+# clean up by removing the "ko:" in front of every KO term
+kegg_data2$KEGG.KO <- kegg_data2$V13
+kegg_data2$Query <- gsub( "-RA", "", as.character(kegg_data2$V1))
+kegg_data2
+
+# expand, since some genes/proteins will have multiple assigned KO terms
+kegg2 <- data.table(kegg_data2)
+kegg2 <- kegg2[, list(KEGG.KO = unlist(strsplit(KEGG.KO, ","))), by = Query]
+kegg2_final <- kegg2[,c(2,1)]
+kegg2_final
+
+# select the needed columns
+#kegg_final <- kegg[,c(2,1)]
+
+# finally you need a list of gene/protein names of interest (only the     # identifiers). Here, this is called protein_ids. It can be a vector or a # column in a data.frame. This can be a list of differentially expressed   # genes or the genes present in a cluster of module that is experimentall # interesting to you.
+```
+
+```{r}
+enr_resAdult
+ggsave(plot = enr_resAdult, "KEGG_Adult_BP.pdf")
+```
+
+
+
+
+```{r}
+
+#special_genesLRTHDLD <- c(special_genesLTR105,special_genesLTR305)
+#genesLRTHDLD <- sort(special_genesLRTHDLD, decreasing = TRUE)
+#genesLRTHDLD <- genesLRTHDLD[!duplicated(genesLRTHDLD)]
+
+cand_adult_all_load <- read.csv(file ="/Users/dshipilina/GitHub/VanessaExpression/cand_genes_adult_topGO.tsv",head=FALSE, sep=";")
+cand_adult_all_load[-1,]
+
+nrow(kegg2_final[- grep("map", kegg2_final$KEGG.KO),])
+kegg_KOterms <- kegg2_final[- grep("map", kegg2_final$KEGG.KO),]
+
+
+#,header = FALSE)
+#write.csv(cand_adult_all,file="cand_genes_adult_topGO.tsv",row.names = F)
+
+enr_resAdult <- enricher(cand_adult_all_load[-1,], TERM2GENE=kegg_KOterms, pvalueCutoff = 0.05, pAdjustMethod = "fdr", qvalueCutoff = 0.2, minGSSize = 1)
+enr_resAdult$ID
+#enr_res2$ID
+
+# write the results of the analysis
+write.table(enr_resAdult, file = "enr_resAdult.csv") # write table
+
+# make a simple dot plot of the results and save it as a .tiff file
+tiff(file="KO_dotplotAdult.tiff",width=6, height=4, units="in", res=1200)
+dotplot(enr_resAdult, showCategory=30)
+dev.off()
+```
+
+Overlap of terms
+
+```{r}
+enr_resAdult$ID
+joint_keggs <- kegg_KOterms[is.element(kegg_KOterms$Query,cand_adult_all_load[-1,]),]
+joint_keggs_table <- table(joint_keggs$Query,joint_keggs$KEGG.KO)
+#joint_keggs_table$total <- rowSums(joint_keggs_table[ , c(1,17)])
+joint_keggs_table
+```
+
+```{r}
+retinol_pathway_genes<-kegg2_final[grep("ko00830", kegg2_final$KEGG.KO),]
+retinol_pathway_genes
+functional_annotation[is.element(functional_annotation$GeneID,retinol_pathway_genes$Query),]
+```
+
+Exploring KEGG results:
+
+```{r}
+enr_resAdult$ID
+
+#All xenobiotic-related terms
+#total genes 236
+enr_resAdult$ID[c(1,2,12,11)]
+
+kegg980<-unlist(strsplit(enr_resAdult$geneID[1], "/"))
+kegg983<-unlist(strsplit(enr_resAdult$geneID[11], "/"))
+kegg5204<-unlist(strsplit(enr_resAdult$geneID[2], "/"))
+kegg982<-unlist(strsplit(enr_resAdult$geneID[12], "/"))
+
+#unlist(kegg983genes)
+
+#unlist(kegg980genes)
+
+#intersect(unlist(kegg983genes),unlist(kegg980genes))
+
+#xenokegg<- c(unlist(kegg983genes),unlist(kegg980genes))
+#xenokegg
+
+#xenokegg_all <- xenokegg[!duplicated(xenokegg)])
+
+#All lipid-related terms
+
+enr_resAdult$ID[c(13,5,8)]
+kegg590<-unlist(strsplit(enr_resAdult$geneID[5], "/"))
+kegg140<-unlist(strsplit(enr_resAdult$geneID[8], "/"))
+kegg1130<-unlist(strsplit(enr_resAdult$geneID[13], "/"))
+
+#intersect(intersect(kegg590,kegg140),kegg1130)
+l <- list(kegg590,kegg140,kegg1130)
+
+names(l) = c('kegg590','kegg140','kegg1130')
+result = outer(l, l, Vectorize(intersect))
+result
+
+
+#All vitamin-related terms
+
+enr_resAdult$ID[c(3,9,10)]
+kegg790<-unlist(strsplit(enr_resAdult$geneID[3], "/"))
+kegg790
+kegg860<-unlist(strsplit(enr_resAdult$geneID[9], "/"))
+kegg860
+kegg830<-unlist(strsplit(enr_resAdult$geneID[10], "/"))
+kegg830
+
+l <- list(kegg790,kegg860,kegg830)
+
+names(l) = c('kegg790','kegg860','kegg830')
+result = outer(l, l, Vectorize(intersect))
+result
+
+#All carb-related terms
+enr_resAdult$ID[c(6,4)]
+kegg053<-unlist(strsplit(enr_resAdult$geneID[6], "/"))
+kegg053
+kegg040<-unlist(strsplit(enr_resAdult$geneID[4], "/"))
+kegg040
+
+l <- list(kegg053,kegg040)
+
+names(l) = c('kegg053','kegg040')
+result = outer(l, l, Vectorize(intersect))
+result
+
+#All amino terms
+enr_resAdult$ID[c(7)]
+kegg250<-unlist(strsplit(enr_resAdult$geneID[7], "/"))
+kegg250
+
+#All amino terms
+enr_resAdult$ID[c(14)]
+kegg1120<-unlist(strsplit(enr_resAdult$geneID[14], "/"))
+kegg1120
+
+```
+
+
+##### Figure 3: KEGG
+```{r}
+ # library
+library(ggplot2)
+library(tidyverse)
+ 
+#rename kegg terms
+#kegg980,kegg5204,kegg983,kegg590,kegg140,kegg1130,kegg790,kegg860,kegg830,kegg053,kegg040,kegg250,kegg1120
+kegg_name <- c(rep('Methabolism of xenobiotics by cytochrome P450', 2) ,rep('Drug methabolism - other enzymes', 2) , rep('Sphingolipid metabolism', 2),  rep('Arachidonic acid metabolism', 2) ,rep('Steroid hormone biosynthesis', 2) ,rep('Folate biosynthesis', 2) ,rep('Porphyrin metabolism', 2) ,rep('Retinol metabolism', 2) ,rep('Ascorbate and aldarate metabolism', 2) ,rep('Pentose and glucuronate interconversions', 2) ,rep('Alanine, aspartate and glutamate metabolism', 2) ,rep('Microbial metabolism in diverse environments', 2))
+condition <- rep(c("shared" , "unique") , 12)
+#value <- abs(rnorm(12 , 0 , 15))
+value<-c(11,0,   7,2,    8,2, 6,1,    5,0,   7,0,   5,0,  5,0   ,5,0,    8,0,    4,0, 7,0)
+gene_ratio_kegg <-value/132
+data <- data.frame(kegg_name,condition,value)
+
+#scale_x_discrete(limits=kegg_name)
+geom_bar(position="stack", stat="identity", fill="#512887")
+
+
+ 
+# Stacked
+kegg_adults <- ggplot(data, aes(fill=condition, x=fct_inorder(kegg_name), y=gene_ratio_kegg)) + 
+    geom_bar(position="stack", stat="identity", fill="#512887") + scale_x_discrete() + ylab("gene ratio") + theme(panel.background = element_blank(),
+        aspect.ratio=4/3.5,
+        strip.background = element_blank(),
+        strip.text = element_blank(),
+        axis.line = element_line(size = 0.2, colour = "black"),
+        axis.text.x = element_text(size = 8, angle = 90, vjust = 0.5, hjust = 1),
+        axis.text.y = element_text(size = 8, angle = 90, hjust = 0.5),
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 8, angle = 90),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 8, angle = 90, vjust = 0.2),
+        legend.position = "top",
+        axis.ticks = element_line(colour = "black", size = 0.2))
+
+#ggsave(plot = kegg_adults, "kegg_adults.pdf")
+#ggsave("kegg_adults.pdf", plot = kegg_adults, width = 8, height = 12,units = c("cm"),)
+kegg_adults
+```
+
+
+
+```{r}
+
+enr_resAdult$ID
+
+kegg <- list()
+for (x in 1:14) {
+  #print(sort(unlist(strsplit(enr_resAdult$geneID[x], "/"))))
+  kegg[[x]] <- sort(unlist(strsplit(enr_resAdult$geneID[x], "/")))
+}
+
+
+```
+
+
+```{r}
+showSigOfNodes(myGOdata, score(resultFisher), firstSigNodes = 5, useInfo ='all')
+#printGraph(myGOdata, resultFisher, firstSigNodes = 5, fn.prefix = "tGO", useInfo = "all", pdfSW = TRUE)
+```
+

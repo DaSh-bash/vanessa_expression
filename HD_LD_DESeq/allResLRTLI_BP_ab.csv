@@ -1,0 +1,25 @@
+"GO.ID","Term","Annotated","Significant","Expected","weight01Fisher"
+"GO:0006489","dolichyl diphosphate biosynthetic process",4,3,0.12,9.7e-05
+"GO:0046827","positive regulation of protein export from nucleus",15,4,0.44,0.00075
+"GO:1990245","histone H2A-T120 phosphorylation",2,2,0.06,0.00085
+"GO:1900006","positive regulation of dendrite development",87,9,2.54,0.00094
+"GO:0006265","DNA topological change",9,3,0.26,0.00182
+"GO:0060999","positive regulation of dendritic spine development",36,6,1.05,0.00233
+"GO:0051835","positive regulation of synapse structural plasticity",3,2,0.09,0.0025
+"GO:0001834","trophectodermal cell proliferation",3,2,0.09,0.0025
+"GO:0000354","cis assembly of pre-catalytic spliceosome",3,2,0.09,0.0025
+"GO:0071931","positive regulation of transcription involved in G1/S transition of mitotic cell cycle",3,2,0.09,0.0025
+"GO:0035206","regulation of hemocyte proliferation",41,6,1.2,0.00409
+"GO:0010501","RNA secondary structure unwinding",38,5,1.11,0.00467
+"GO:0090501","RNA phosphodiester bond hydrolysis",120,8,3.51,0.0048
+"GO:0045876","positive regulation of sister chromatid cohesion",4,2,0.12,0.00491
+"GO:0030723","ovarian fusome organization",13,3,0.38,0.00568
+"GO:0033151","V(D)J recombination",13,3,0.38,0.00568
+"GO:0040029","regulation of gene expression, epigenetic",267,17,7.81,0.00637
+"GO:0044703","multi-organism reproductive process",1420,53,41.51,0.00675
+"GO:0034063","stress granule assembly",14,3,0.41,0.00707
+"GO:0032252","secretory granule localization",23,3,0.67,0.008
+"GO:0036150","phosphatidylserine acyl-chain remodeling",5,2,0.15,0.00803
+"GO:0045333","cellular respiration",208,6,6.08,0.00816
+"GO:0046329","negative regulation of JNK cascade",35,5,1.02,0.0083
+"GO:2000059","negative regulation of ubiquitin-dependent protein catabolic process",43,4,1.26,0.00863
