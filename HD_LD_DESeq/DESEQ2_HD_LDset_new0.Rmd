@@ -1738,6 +1738,7 @@ GO_dataLRTLD_BP_he <- new("topGOdata",
                annot=annFUN.gene2GO, 
                gene2GO=geneID2GO, 
                nodeSize=1)
+
 ```
 
 
@@ -1759,12 +1760,13 @@ allResLRTLD_BP_he
 ```
 
 ```{r}
-saveRDS(allResLRTLD_BP_ab, file = "allResLRTLD_BP_ab.rds")
+saveRDS(allResLRTLD_BP_he, file = "allResLRTLD_BP_he.rds")
 ```
 
 #### Figure 2E
 ```{r}
 #allResLRTLI_BP
+allResLRTLD_BP_he <- readRDS(file = "allResLRTLD_BP_he.rds")
 
 topGOLRTLD_BP_he <- allResLRTLD_BP_he[allResLRTLD_BP_he$weight01Fisher<=0.01, ]
 nrow(allResLRTLD_BP_he[allResLRTLD_BP_he$weight01Fisher<=0.01, ])
@@ -1798,8 +1800,8 @@ plot_topGoLRTLD_he_select
 #filtered_data <- subset(allResLRTLI_BP_ab, weight01Fisher < 0.01)
 
 # Write the filtered data to a CSV file
-write.csv(topGOLRTLD_BP_ab, "topGOLRTLD_BP_ab.csv", row.names = FALSE)
-topGOLRTLD_BP_ab
+write.csv(topGOLRTLD_BP_he, "topGOLRTLD_BP_he.csv", row.names = FALSE)
+topGOLRTLD_BP_he
 ```
 
 
@@ -3654,6 +3656,7 @@ resAdultLD_hedata <- read.csv(file ="/Users/dshipilina/GitHub/VanessaExpression/
 resAdultLD_hedata$diffexpressed <- "NO"
 # if log2Foldchange > 0.6 and pvalue < 0.05, set as "UP" 
 resAdultLD_hedata$diffexpressed[resAdultLD_hedata$log2FoldChange > 2 & resAdultLD_hedata$padj < 0.05] <- "UP"
+
 # if log2Foldchange < -0.6 and pvalue < 0.05, set as "DOWN"
 resAdultLD_hedata$diffexpressed[resAdultLD_hedata$log2FoldChange < -2 & resAdultLD_hedata$padj < 0.05] <- "DOWN"
 
@@ -3685,6 +3688,75 @@ p
 ggsave("resAdultLD_hedata.pdf", plot = p, width = 15, height = 30,units = c("cm"),)
 
 ```
+
+
+
+```{r}
+resAdultLD_hedata <- read.csv(file ="/Users/dshipilina/GitHub/VanessaExpression/HD_LD_DESeq/resAdultLD_he.csv",header = TRUE)
+
+# add a column of NAs
+resAdultLD_hedata$diffexpressed <- "NO"
+# if log2Foldchange > 0.6 and pvalue < 0.05, set as "UP" 
+resAdultLD_hedata$diffexpressed[resAdultLD_hedata$log2FoldChange > 2 & resAdultLD_hedata$padj < 0.05] <- "UP"
+
+# if log2Foldchange < -0.6 and pvalue < 0.05, set as "DOWN"
+resAdultLD_hedata$diffexpressed[resAdultLD_hedata$log2FoldChange < -2 & resAdultLD_hedata$padj < 0.05] <- "DOWN"
+
+#res05abffuncdata <- functional_annotation[is.element(functional_annotation$GeneID,c(res05abfdata$X)),]
+#res05abffuncdata <- res05abffuncdata[order(res05abffuncdata$GeneID)]
+
+resAdultLD_hedata$delabel <- NA
+resAdultLD_hedata$delabel[resAdultLD_hedata$diffexpressed != "NO"] <- resAdultLD_hedata$X[resAdultLD_hedata$diffexpressed != "NO"]
+
+resAdultLD_hedataoutliers <-  resAdultLD_hedata %>% filter(log2FoldChange > 2 & diffexpressed != "NO" | log2FoldChange < -2 & diffexpressed != "NO" | -log10(padj) > 10) 
+
+
+resAdultLD_hecandgene_names <- read.csv(file ="/Users/dshipilina/GitHub/VanessaExpression/HD_LD_DESeq/resAdultLDLI_abhe_topnamesBLAST0.tsv",header = FALSE,sep = "\t")
+resAdultLD_hecandgene_names$V1<-gsub('-RA','',resAdultLD_hecandgene_names$V1)
+resAdultLD_hecandgene_names
+
+resAdultLD_he2dataoutliers <- left_join(resAdultLD_hedataoutliers, resAdultLD_hecandgene_names, by=c('delabel'='V1'))
+
+write.csv(resAdultLD_he2dataoutliers, "resAdultLD_he2dataoutliers.csv", row.names = FALSE)
+resAdultLD_he2dataoutliers
+```
+
+```{r}
+write.csv(resAdultLD_he2dataoutliers, "resAdultLD_he2dataoutliers.csv", row.names = FALSE)
+resAdultLD_he2dataoutliers
+```
+
+
+```{r}
+resAdultLD_abdata <- read.csv(file ="/Users/dshipilina/GitHub/VanessaExpression/HD_LD_DESeq/resAdultLD_ab.csv",header = TRUE)
+
+# add a column of NAs
+resAdultLD_abdata$diffexpressed <- "NO"
+# if log2Foldchange > 0.6 and pvalue < 0.05, set as "UP" 
+resAdultLD_abdata$diffexpressed[resAdultLD_abdata$log2FoldChange > 2 & resAdultLD_abdata$padj < 0.05] <- "UP"
+
+# if log2Foldchange < -0.6 and pvalue < 0.05, set as "DOWN"
+resAdultLD_abdata$diffexpressed[resAdultLD_abdata$log2FoldChange < -2 & resAdultLD_abdata$padj < 0.05] <- "DOWN"
+
+#res05abffuncdata <- functional_annotation[is.element(functional_annotation$GeneID,c(res05abfdata$X)),]
+#res05abffuncdata <- res05abffuncdata[order(res05abffuncdata$GeneID)]
+
+resAdultLD_abdata$delabel <- NA
+resAdultLD_abdata$delabel[resAdultLD_abdata$diffexpressed != "NO"] <- resAdultLD_abdata$X[resAdultLD_abdata$diffexpressed != "NO"]
+
+resAdultLD_abdataoutliers <-  resAdultLD_abdata %>% filter(log2FoldChange > 2 & diffexpressed != "NO" | log2FoldChange < -2 & diffexpressed != "NO" | -log10(padj) > 10) 
+
+
+resAdultLD_abcandgene_names <- read.csv(file ="/Users/dshipilina/GitHub/VanessaExpression/HD_LD_DESeq/resAdultLDLI_abhe_topnamesBLAST0.tsv",header = FALSE,sep = "\t")
+resAdultLD_abcandgene_names$V1<-gsub('-RA','',resAdultLD_abcandgene_names$V1)
+resAdultLD_abcandgene_names
+
+resAdultLD_ab2dataoutliers <- left_join(resAdultLD_abdataoutliers, resAdultLD_abcandgene_names, by=c('delabel'='V1'))
+
+write.csv(resAdultLD_ab2dataoutliers, "resAdultLD_ab2dataoutliers.csv", row.names = FALSE)
+resAdultLD_ab2dataoutliers
+```
+
 
 
 ```{r}
