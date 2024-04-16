@@ -1,0 +1,47 @@
+"GO.ID","Term","Annotated","Significant","Expected","weight01Fisher"
+"GO:0060789","hair follicle placode formation",5,4,0.3,6.1e-05
+"GO:0072327","vulval cell fate specification",15,6,0.9,0.00014
+"GO:0033622","integrin activation",6,4,0.36,0.00017
+"GO:0090256","regulation of cell proliferation involved in imaginal disc-derived wing morphogenesis",3,3,0.18,0.00021
+"GO:0086042","cardiac muscle cell-cardiac muscle cell adhesion",4,3,0.24,0.00082
+"GO:0019432","triglyceride biosynthetic process",40,10,2.4,0.00184
+"GO:0007044","cell-substrate junction assembly",71,10,4.26,0.00192
+"GO:0032210","regulation of telomere maintenance via telomerase",42,5,2.52,0.00196
+"GO:0070072","vacuolar proton-transporting V-type ATPase complex assembly",10,4,0.6,0.002
+"GO:0007298","border follicle cell migration",143,18,8.57,0.00215
+"GO:0032507","maintenance of protein location in cell",84,11,5.04,0.00222
+"GO:0002066","columnar/cuboidal epithelial cell development",356,35,21.34,0.00256
+"GO:0042273","ribosomal large subunit biogenesis",62,7,3.72,0.00258
+"GO:0035987","endodermal cell differentiation",35,6,2.1,0.00299
+"GO:0071329","cellular response to sucrose stimulus",11,4,0.66,0.003
+"GO:0005977","glycogen metabolic process",64,10,3.84,0.00332
+"GO:0045766","positive regulation of angiogenesis",71,11,4.26,0.00334
+"GO:0031000","response to caffeine",26,6,1.56,0.00337
+"GO:0016189","synaptic vesicle to endosome fusion",2,2,0.12,0.00359
+"GO:0044720","negative regulation of imaginal disc-derived wing size",2,2,0.12,0.00359
+"GO:0033689","negative regulation of osteoblast proliferation",2,2,0.12,0.00359
+"GO:0010724","regulation of definitive erythrocyte differentiation",2,2,0.12,0.00359
+"GO:0010890","positive regulation of sequestering of triglyceride",2,2,0.12,0.00359
+"GO:0007504","larval fat body development",2,2,0.12,0.00359
+"GO:0090410","malonate catabolic process",2,2,0.12,0.00359
+"GO:2000632","negative regulation of pre-miRNA processing",2,2,0.12,0.00359
+"GO:0036270","response to diuretic",26,6,1.56,0.0037
+"GO:0061883","clathrin-dependent endocytosis involved in vitellogenesis",6,3,0.36,0.00374
+"GO:0007596","blood coagulation",119,15,7.13,0.00484
+"GO:0045886","negative regulation of synaptic assembly at neuromuscular junction",55,9,3.3,0.00499
+"GO:0065009","regulation of molecular function",1595,106,95.61,0.00504
+"GO:0048041","focal adhesion assembly",50,6,3,0.00623
+"GO:0007166","cell surface receptor signaling pathway",1456,92,87.28,0.00764
+"GO:0045022","early endosome to late endosome transport",29,5,1.74,0.00788
+"GO:0006697","ecdysone biosynthetic process",14,4,0.84,0.00788
+"GO:0006139","nucleobase-containing compound metabolic process",3194,204,191.46,0.00866
+"GO:0045214","sarcomere organization",91,15,5.45,0.00883
+"GO:0016203","muscle attachment",60,9,3.6,0.0089
+"GO:0035303","regulation of dephosphorylation",127,13,7.61,0.0094
+"GO:0035088","establishment or maintenance of apical/basal cell polarity",89,9,5.33,0.00949
+"GO:2000279","negative regulation of DNA biosynthetic process",23,4,1.38,0.00955
+"GO:1901896","positive regulation of ATPase-coupled calcium transmembrane transporter activity",8,3,0.48,0.00955
+"GO:0040032","post-embryonic body morphogenesis",8,3,0.48,0.00955
+"GO:0070932","histone H3 deacetylation",8,3,0.48,0.00955
+"GO:0019853","L-ascorbic acid biosynthetic process",8,3,0.48,0.00955
+"GO:0043487","regulation of RNA stability",156,11,9.35,0.0096
