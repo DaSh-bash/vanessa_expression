@@ -1,2 +1,3 @@
 load("/Users/dshipilina/GitHub/VanessaExpression/deseq2_qc/deseq2.dds.RData")
 load("/Users/dshipilina/GitHub/VanessaExpression/deseq2_qc/size_factors/deseq2.size_factors.RData")
+load("/Users/dshipilina/GitHub/VanessaExpression/deseq2_qc/deseq2.dds.RData")

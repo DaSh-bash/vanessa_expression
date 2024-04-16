@@ -57,7 +57,7 @@ head(colDataLRab)
 
 Constructing DESeq2 object, at this point counts are transformed according to the DESeq specific algorithm.
 Current hypothsis includes split into treatment groups *only* (~condition), filtering out genes with less then 10 total counts 
-```
+```{r}
 ddsLRab <- DESeqDataSetFromMatrix(countData=countLRab, colData =colDataLRab, design = ~condition)
 
 #Basic filtering
@@ -68,7 +68,7 @@ head(ddsLRab)
 
 **DESeq analysis**
 Main valuation, calculation of p-values
-```
+```{r}
 ddsLRab <- DESeq(ddsLRab) #running the main function
 resLRab <- results(ddsLRab)
 resLRab <- resLRab[order(resLRab$padj),]
@@ -91,17 +91,20 @@ Log fold change shrinkage is recommended for visualization and ranking, her we f
 We provide the dds object and the name or number of the coefficient we want to shrink, where the number refers to the order of the coefficient as it appears in resultsNames(dds)."
 
 
-```
+```{r}
 #head(resultsNames(ddsLRab))
 resLFC <- lfcShrink(ddsLRab, coef="condition_LI_vs_AL", type="apeglm")
 resLFC
+```
+```{r}
+
 ```
 
 
 Visual exploration of the results
 
 We us first 100 significant genes to build a PCA plot:
-```
+```{r}
 vsdata <- vst(ddsLRab, blind=FALSE)
 plotPCA(vsdata, intgroup=c("Group4"))
 
