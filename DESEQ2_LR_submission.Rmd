@@ -606,6 +606,7 @@ res05hef2dataoutliersgenes
 res05hef2data <- read.csv(file ="/Users/dshipilina/GitHub/VanessaExpression/res05hef2.csv",header = TRUE)
 
 # add a column of NAs
+
 res05hef2data$diffexpressed <- "NO"
 # if log2Foldchange > 0.6 and pvalue < 0.05, set as "UP" 
 res05hef2data$diffexpressed[res05hef2data$log2FoldChange > 2 & res05hef2data$padj < 0.05] <- "UP"

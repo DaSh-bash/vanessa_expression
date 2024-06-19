@@ -10,6 +10,7 @@ library("enrichplot")
 library("data.table")
 library(DEGreport)
 library(DESeq2)
+
 library(GeneOverlap)
 library(ggplot2)
 ```
@@ -2615,6 +2616,12 @@ pattLIabdata
 
 #### Figure 3D
 
+```{r}
+library(DEGreport)
+
+```
+
+
 
 ```{r}
 #devstagelabs <- c("Instar III", "Instar V", "Pupa", "Adult")
@@ -3397,6 +3404,8 @@ colDataAdult_he<-colDataAdult_he[colDataAdult_he$condition == "HDAL" | colDataAd
 colDataAdult_he
 
 
+
+
 ##Removing sex information
 colDataAdult_he$devstage <- substr(colDataAdult_he$stage, 1, 1)
 colDataAdult_he$sex <- substr(colDataAdult_he$stage, 3, 3)
@@ -3815,7 +3824,7 @@ resAdultLD_ab[order(resAdultLD_ab$padj),]
 library(ggrepel)
 
 
-write.csv(as.data.frame(resAdultLD_ab), file="resAdultLD_ab.csv")
+#write.csv(as.data.frame(resAdultLD_ab), file="resAdultLD_ab.csv")
 resAdultLD_abdata <- read.csv(file ="/Users/dshipilina/GitHub/VanessaExpression/HD_LD_DESeq/resAdultLD_ab.csv",header = TRUE)
 
 # add a column of NAs
@@ -3844,11 +3853,11 @@ resAdultLD_ab2dataoutliers <- left_join(resAdultLD_abdataoutliers, resAdultLD_ab
 
 #+ ylim(0, 18)+ xlim(-20, 20) 
 
-p <- ggplot(data=resAdultLD_abdata, aes(x=log2FoldChange, y=-log10(padj), col=diffexpressed, label = delabel)) + geom_point() + theme_classic() + geom_text_repel(data=resAdultLD_ab2dataoutliers, aes(x=log2FoldChange, y=-log10(padj), col=diffexpressed, label = V2)) + ylim(0, 15)+ xlim(-20, 20) + theme(aspect.ratio = 6/6)+ geom_vline(xintercept=c(-2, 2), col="black", linetype = 2)  + scale_color_manual(values=c("#9b2c00", "grey", "#084748"))
+p <- ggplot(data=resAdultLD_abdata, aes(x=log2FoldChange, y=-log10(padj), col=diffexpressed, label = delabel)) + geom_point() + theme_classic() + geom_text_repel(data=resAdultLD_ab2dataoutliers, aes(x=log2FoldChange, y=-log10(padj), col=diffexpressed, label = V2)) + ylim(0, 15)+ xlim(-20, 20) + theme(aspect.ratio = 6/6)+ geom_vline(xintercept=c(-2, 2), col="black", linetype = 2)  + scale_color_manual(values=c("#084748", "grey", "#9b2c00"))
 
 p
 
-#ggsave("resAdult_hedata.pdf")
+ggsave("resAdult_abdata_revApr.pdf")
 
 #ggsave("resAdultLD_abdata.pdf", plot = p, width = 15, height = 30,units = c("cm"),)
 
