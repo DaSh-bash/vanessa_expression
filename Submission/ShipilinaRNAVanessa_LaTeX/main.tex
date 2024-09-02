@@ -1,0 +1,531 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% A template for Wiley article submissions developed by 
+% Overleaf for the Overleaf-Wiley pilot which ran 
+% during 2017 and 2018.      
+% 
+% This template is no longer supported, but is provided
+% for historical reference. Last updated January 2019.
+%
+% Please note that whilst this template provides a 
+% preview of the typeset manuscript for submission, it 
+% will not necessarily be the final publication layout.
+%
+% Document class options:
+% =======================
+% blind: Anonymise all author, affiliation, correspondence
+%        and funding information.
+%
+% lineno: Adds line numbers.
+%
+% serif: Sets the body font to be serif. 
+%
+% twocolumn: Sets the body text in two-column layout. 
+% 
+% num-refs: Uses numerical citation and references style 
+%           (Vancouver-authoryear).
+%
+% alpha-refs: Uses author-year citation and references style
+%             (rss).
+%
+% Using other bibliography styles:
+% =======================
+%
+% To specify a different bibiography style
+%
+% 1) Do not use either num-refs or alpha-refs in documentclass.
+% 2) Load natbib package with the options set as needed.
+% 3) Use the \bibliographystyle command to specify the style
+% 
+% Included NJD styles are: 
+%   WileyNJD-ACS
+%   WileyNJD-AMA
+%   WileyNJD-AMS
+%   WileyNJD-APA
+%   WileyNJD-Harvard
+%   WileyNJD-VANCOUVER
+%
+% or you may upload an alternative .bst file 
+% (if requested by the journal).
+%
+% Examples:
+% =======================
+%% Example: Using numerical, sort-by-authors citations.
+%\documentclass[lineno,twocolumn]{wiley-article}
+\documentclass[lineno]{wiley-article}
+
+%% Example: Using author-year citations and anonymising submission
+% \documentclass[blind,alpha-refs]{wiley-article}
+
+%% Example: Using unsrtnat for numerical, in-sequence citations
+% \documentclass{wiley-article}
+% \usepackage[numbers]{natbib}
+% \bibliographystyle{unsrtnat}
+
+%% Example: Using WileyNJD-AMA reference style and superscript
+%%          citations, two-column and serif fonts for AIChE
+% \documentclass[serif,twocolumn,lineno]{wiley-article}
+% \usepackage[super]{natbib}
+% \bibliographystyle{WileyNJD-AMA}
+% \makeatletter
+% \renewcommand{\@biblabel}[1]{#1.}
+% \makeatother
+
+% Add additional packages here if required
+\usepackage{siunitx}
+\usepackage{placeins,afterpage}
+\renewcommand{\topfraction}{0.99}  
+\renewcommand{\textfraction}{0.01}  
+
+\renewcommand{\floatpagefraction}{0.9}  
+% Update article type if known
+\papertype{Original Article}
+% Include section in journal if known, otherwise delete
+%\paperfield{Journal Section}
+\title{Gene expression responses to environmental cues shed light on components of the migratory syndrome in butterflies} 
+% Use the \authfn to add symbols for additional footnotes and present addresses, if any. Usually start with 1 for notes about author contributions; then continuing with 2 etc if any author has a different present address.
+\author[1\authfn{1}]{Daria Shipilina}
+\author[1]{Lars Höök}
+\author[1\authfn{2}]{Karin Näsvall}
+\author[1]{Venkat Talla}
+\author[1]{Aleix Palahí}
+\author[1]{Elenia Parkes}
+\author[2]{Roger Vila}
+\author[3]{Gerard Talavera}
+\author[1]{Niclas Backström}
+\affil[1]{Evolutionary Biology Program, Department of Ecology and Genetics (IEG), Uppsala University, Norbyvägen 18D, SE-752 36 Uppsala, Sweden}
+\affil[2]{Institut de Biologia Evolutiva (CSIC-Univ. Pompeu Fabra), Passeig Martim de la Barceloneta 37-49, 08003 Barcelona, Spain}
+\affil[3]{Institut Botànic de Barcelona (IBB), CSIC-CMCNB, Passeig del Migdia s/n, 08038 Barcelona, Spain}
+
+\corraddress{Evolutionary Biology Program, Department of Ecology and Genetics (IEG), Uppsala University, Norbyvägen 18D, SE-752 36 Uppsala, Sweden}
+\corremail{daria.shipilina@ebc.uu.se}
+
+\presentadd[\authfn{2}]{Wellcome Genome Campus, Hinxton, Cambridgeshire, CB10 1SA, UK}
+
+%\fundinginfo{Funder One, Funder One Department, Grant/Award Number: 123456, 123457 and 123458; Funder Two, Funder Two Department, Grant/Award Number: 123459}
+
+% Include the name of the author that should appear in the running header
+\runningauthor{Shipilina et al.}
+
+\begin{document}
+
+\begin{frontmatter}
+\maketitle
+%\end{frontmatter}
+
+%\begin{frontmatter}
+\begin{abstract}
+Migration is a complex behavior involving the synchronisation of many physiological and behavioral processes. Environmental cues must thus be interpreted to make decisions regarding resource allocation between, for example, migration or reproduction. In butterflies, the lack of host plants to sustain a new generation may indicate the need to migrate. Here, we used the painted lady butterfly (\textit{Vanessa cardui}) as a model to characterize gene expression variation in response to host plant availability. Assessment of the response to host plant availability in adult female butterflies revealed significant modifications in gene expression, particularly within hormonal pathways (ecdysone oxidase and juvenile hormone esterase). We therefore hypothesize that tuning the ecdysone pathway may play a crucial role in regulating the timing of migration and reproduction in adult female painted lady butterflies. In addition, our analysis revealed significant enrichment of genes associated with lipid, carbohydrate, and vitamin biosynthesis, as well as the immune response. As environmental acquisition occurs throughout the life cycle, we also tracked gene expression responses to two other environmental cues across major developmental stages. Differences in both larval crowding and host plant availability during development resulted in significant changes in the expression of genes involved in development, reproduction and metabolism, particularly at the instar V larval stage. In summary, our results offer novel insights into how environmental cues affect expression profiles in migratory insects and highlight candidate genes that may underpin the migratory syndrome in the painted lady butterfly.
+
+% Please include a maximum of seven keywords
+\keywords{butterfly migration, environmental cues, migratory syndrome, gene expression, \emph{Vanessa cardui}}
+\end{abstract}
+\end{frontmatter}
+
+\section{Introduction}
+Animals are recurrently facing challenges to optimize resource allocation and individual decisions can have considerable downstream consequences on both survival and reproductive output (1,2). Migration is one example of a behavioral response to seasonal shifts in the environment, essentially allowing migratory organisms to avoid temporary unfavorable environmental conditions (3,4). Migratory movements have been characterized in detail in many different groups of organisms, however vertebrates have traditionally received most of the attention, while the understanding of invertebrate migration is limited to a few model species (5–7). Recent advances in tracking migratory movements in insects, for example via pollen metabarcoding and isotope-based geolocation of natal origins (e.g. 8–10), have revealed that they are capable of traversing remarkable distances. Migratory behavior is a complex trait involving decisions in initiating, maintaining and terminating migratory movements. Phenotypic plasticity in response to environmental cues is critical for making optimal decisions. Therefore, one of the crucial aspects for understanding the genetic basis of migration is pinpointing gene regulatory networks leading to the initiation of the migratory syndrome as a response to the environment (11). While environmental cues play a vital role in triggering behavioral switches, the underlying mechanisms of their interpretation and processing, as well as the responses on the molecular level, have only been studied in a few migratory insects e.g., the migratory locust \textit{(Locusta migratoria)} and the monarch butterfly \textit{(Danaus plexippus)} (12,13).
+
+Upon sensing environmental cues, migratory insects commonly face scenarios demanding trade-offs between alternative resource allocations and physiological responses (14–16). The key trade-off characterizing the migratory syndrome, or the initial impulse to migrate, in insects is termed the oogenesis-flight syndrome and refers to the delayed investment in reproduction in favor of migration (17,18). Different migratory insect species exhibit significant variation in their physiological and behavioral integration of the oogenesis-flight syndrome. The syndrome varies from complete reproductive arrest during migration in for example the boll weevil (19) and the beet webworm (20), to the expression of the syndrome in certain generations like in the monarch butterfly (21), to an absence of reproductive arrest in several species, for example in the beet armyworm (22) and the codling moth (23), where females can migrate with fertilized and developed eggs (reviewed in 16). Most of the evidence for the oogenesis-flight syndrome is primarily based on phenotypic observations (18,24) and, while physiological and behavioral changes have been described in some detail, characterization of the genetic underpinnings of the trade-offs have predominantly been focused on reproductive arrest (25,26). Therefore, more detailed investigations are needed to enhance our understanding of this complex phenomenon.
+
+Accurate perception of environmental cues is essential for the expression of the migratory syndrome, both in adult individuals and during ontogenesis (27). Among others, two environmental cues perceived during development have been shown to be associated with variation in propensity to migrate: rearing density and periodic starvation. High density during early developmental stages, for example, can lead to a predominant investment in migration, likely as a strategy to disperse from areas where competition with conspecifics is high. The desert locust \textit{(Schistocerca gregaria)} is a notable example of this phenomenon, exhibiting a density-dependent phase polyphenism that triggers a transition from a benign, solitary phase to a more gregarious, highly migratory phase (12,28,29). In Lepidoptera, density-dependent migration has also been observed in the fall armyworm \textit{Spodoptera frugiperda}; (30), and larval density has been associated with outbreaks in the agricultural pest, beet webworm \textit{(Loxostege sticticalis} (20)). Food availability and quality has also been linked to the oogenesis-flight syndrome in insects, where limited resources during development predominantly manifest in reduced body size, fat storage, fecundity and investment in reproduction. Food availability should therefore have a major influence on migration capacity/propensity and, hence, the trade-off between reproduction and migration (31–33).
+
+The painted lady butterfly \textit{(Vanessa cardui)} is an emerging model species for studying the genomic basis of multigenerational long-distance migration (34–36). In addition to performing the longest individual migratory flight distances of any Lepidoptera (8,37–39), \textit{V. cardui} is completely lacking diapause, which highlights the recurrent balance between reproduction and migration as a key adaptation in the species. Delayed onset of reproduction suggestive of an oogenesis-flight syndrome has been observed in \textit{V. cardui} (40), but evidences are mixed  (41) and considerable inter-individual differences in migration distance have been observed (10). Recently developed genomic resources (35,36) make it possible to investigate the genetic underpinnings of migratory behavior in this species. Until now, however, very few attempts have been made to characterize the components of the migratory syndrome and its dependence on environmental cues. Spearheading work using methylation and chromatin accessibility data has pinpointed candidate pathways that are likely involved in sensory perception of environmental cues (42,43), but analyses that investigate potential associations with transcription profiles of specific genes or gene categories have not been performed. 
+
+Given the complex nature of genetic regulation underlying the migratory behavior, it is advantageous to conduct separate experiments targeting various environmental cues. Here, we make a first attempt to investigate the transcriptomic response to two environmental cues that can be associated with investment in reproduction or migration in butterflies: larval density and host plant availability for egg laying and as a food source. The main aims were to i) characterize transcriptomic responses to these environmental cues across developmental stages and in adult females, ii) identify developmental time points at which the environmental cues trigger a difference in gene expression, iii) identify candidate genes that might be involved in the trade-off between reproduction and migration.
+
+\section{MATERIALS AND METHODS}
+\subsection{Experimental setup}
+Painted lady \textit{(Vanessa cardui)} butterfly females were collected in Catalonia, Spain, and individually housed in cages for egg laying at 23°C under an 18:6-hour light:dark regime. The butterflies were provided with host plants \textit{(Malva sylvestris)} for egg laying and a 10\% sugar water solution as a food source. The F1 offspring were raised individually with \textit{ad libitum} access to food plants \textit{(M. sylvestris)}, and were subsequently divided into experimental groups under controlled environmental conditions (Figure 1). 
+
+Two separate experiments were carried out to analyze the transcriptomic response to different environmental cues. The first experiment was designed to investigate the potential influence of the presence or absence of the host plants for egg laying on gene expression profiles in adult females (Figure 1A). The second experiment was designed to characterize the effects of larval density and food availability on gene expression profiles during development (larval instars III and V, and pupae) and after emergence (imagines, both sexes) (Figure 1B).
+
+\subsection{Host plant availability effects on gene expression profiles in adult females}
+Twenty newly emerged adult F1 females were marked individually and released into one of two large cages (80 x 80 x 50 cm), 10 in each cage. One cage contained an abundance of host plants (nine 15 x 15 cm pots with \textit{M. sylvestris}) for egg laying, while the other cage lacked host plants (Figure 1A) and both cages contained 10 free-flying males. Both experimental groups were provided with 10\% sugar water as adult food, and the temperature and light regime were the same as for rearing larvae (23°C and an 18:6-hour light-dark regime). In the morning five days after emergence, around the expected time for first mating / reproductive maturity (40,41), five females from each respective treatment group were snap frozen in liquid nitrogen.
+
+\subsection{Crowding and food availability effects on expression profiles across developmental stages}
+In the second experiment, five newly mated F1 females were placed in individual cages containing \textit{M. sylvestris} for egg laying. The eggs (F2) laid by each female were collected and divided into three treatment groups (Figure 1): LDAL (low density, \textit{ad libitum} food), HDAL (high density, \textit{ad libitum} food), and HDLI (high density, limited food) (Figure 1B). In the LD (low-density) condition, larvae were individually reared in 1-liter flasks, while in the HD (high-density) treatment, 10 larvae were kept together in a single 1-liter flask. Both density treatment groups had \textit{ad libitum} access to food \textit{(M. sylvestris)}, which was replaced daily. In the LI (limited resource) treatment group, the food was replaced every other day, creating a mild starvation regime. Individuals in this treatment group were reared in groups of 10 (high density). This setup allowed us to contrast treatments with different food availabilities (HDAL versus HDLI) and larval rearing densities (HDAL versus LDAL) separately (Figure 1). 
+
+Samples were collected at four developmental stages: larva (instar III and instar V), pupa, and adult. Larvae were harvested on the day they entered the respective larval stage, pupae were sexed and collected one day after pupation, and adults were harvested in the morning on the day of emergence. Prior to RNA extraction, individuals were snap frozen in liquid nitrogen and stored at -80°C. Note that larvae of this species cannot be easily sexed, and these cohorts therefore can constitute a mix of males and females. Pupae and adults were sexed and divided into sex-specific cohorts. For each treatment and cohort, one individual among the offspring of each of the five different F1 females was selected for sequencing (Figure 1).
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=7.0cm]{‎Vanessa_RNAseq_Figures2_Fig1.‎001.jpeg}
+\caption{Setup of the two experiments conducted on offspring of wild-caught \textit{Vanessa cardui} females (F1 in the center). Numbers of sequenced individuals are provided for each treatment and cohort. A) The host plant availability experiment, where recently emerged females were divided in two experimental groups with or without access to \textit{Malva sylvestris} for egg laying. B) The setup of the larval density and food availability experiment for different developmental stages. Here, F2 offspring from five different F1 females were divided into three cohorts where the environmental conditions varied. HDAL = high density (10 larvae / flask) and \textit{ad libitum} food, LDAL = low density (1 larva / flask) and \textit{ad libitum} food, HDLI = low density (1 larva / flask) and limited food (fed every other day).}
+\end{figure}
+
+\subsection{RNA extraction and sequencing}
+Two types of tissues were used for RNA extractions; heads (including antennae) and abdomens (the 6th - 8th body segments). The number of samples for each treatment/cohort are provided in Figure 1 and Supplementary Table 1). Tissues were homogenized using a micro-pestle in guanidine-isothiocyanate lysis buffer, followed by mixing with QiaShredder (Qiagen). RNA extractions were performed using the RNeasy Mini Kit (Qiagen) following the recommended guidelines by the manufacturer. RNA integrity and fragment lengths were assessed using 1\% agarose gel electrophoresis, followed by measurements of the concentration using NanoDrop (ThermoFisher) and Qubit (ThermoFisher). Sequencing libraries were prepared using the Illumina TruSeq Stranded mRNA polyA selection kit and sequenced by the National Genomics Infrastructure (NGI) in Stockholm. Sequencing was conducted on two lanes of one S4 flow cell on the NovaSeq S6000 platform, generating 150 bp paired-end reads.
+
+\subsection{Differential expression analysis}
+For all steps of the read processing, from adapter filtering to read mapping and transcript quantification, the Nextflow nf-core (44) pipeline rnaseq v3.8.1 was applied (45). In brief, raw sequencing reads were trimmed using Cutadapt v.3.4 (46) as implemented Trim Galore! v0.6.7. STAR v2.7.10a (47) was used for mapping the reads to a previously published genome assembly (36). Read quantification was carried out using salmon v1.5.2 (48), and gene expression levels were measured in transcripts per million reads (TPM) values. Differential expression analyses were conducted in R v4.2.1 using DESeq2 v1.28.0 (49).
+
+To assess differential expression between the cohorts of adult individuals with or without access to host plants for egg laying, we employed the Wald test in the DESeq2. Our experimental design incorporated the correction for potential family effects, with treatment as the primary variable (\textasciitilde family+treatment). Due to incomplete family assignment for some samples, we utilized PCA analysis to recover the missing assignments. Additionally, we applied the Wald test for differential expression analysis in adult individuals subjected to environmental stressors: food limitation and larval crowding. Here, we also accounted for the potential effect of sex since both males and females were used in the analysis (\textasciitilde family+sex+treatment).
+
+Differential gene expression across developmental stages was assessed using the likelihood ratio test mode of DESeq2 (model = "LRT"), which allows for analysis of time course experiments. This test compared the fit of a full model (\textasciitilde family+devstage+treatment+treatment:devstage) with a reduced model that excluded the interactive effect between the treatment and developmental stage ("devstage") variables. This analysis aimed to evaluate whether the effect of the treatment on gene expression differed across developmental stages. The same model was applied to both head and abdomen tissues, and the analysis included the treatments food availability (HDAL versus HDLI) and rearing density (HDAL versus LDAL).
+
+For further analysis, candidate genes were selected based on the criteria of an adjusted \( p \)-value \( < 0.05 \) (Benjamini and Hochberg to control FDR) and a \(\log_2(\text{fold change}) > 2\). The GeneOverlap package (50) was used to assess the significance of overlaps between candidate gene sets in different tissues. Since tests using LRT typically result in larger gene sets, clusterProfiler v3.17 (51) was applied to identify functional clusters within all sets of candidate genes across the four ontogenetic stages, using parameters (consensusCluster = TRUE, groupDifference = 2) on \( r \)log-transformed data. Regularized log (\( r \)log) transformation was used for stabilizing variance and normalizing the count data. In the case of the head tissue, where 745 candidate genes were identified, more stringent clustering parameters were employed with a group difference of 3. Functional information for differentially expressed genes was collected both by using previous annotations (35,36) and by BLAST searches against the entire nucleotide database (52). Data was summarized in corresponding supplementary tables, when two annotations were available the one from the most similar ortholog was chosen.
+
+To assess if certain functional categories were overrepresented in the gene sets with significant differential expression, we conducted two types of enrichment analyses, Gene Ontology (GO) terms and KEGG pathways, utilizing previously obtained functional annotations. Enrichment analysis of GO terms (biological processes category) was performed using the TopGO package (53), employing the "weight01" algorithm, with a significance threshold of p < 0.01. The enrichment analysis of KEGG terms was performed using the enricher module of clusterProfiler (51).
+
+\section{Results}
+\subsection{Gene expression patterns in response to host plant availability in adult females}
+To understand how the presence or absence of host plants for egg laying affects transcriptional responses in recently emerged female imagines, we analyzed gene expression in head and abdominal tissues (Figure 2). The rationale behind choosing those particular tissues was that signaling cascades should be initiated in the head based on sensory perception of the environmental cues and that this may manifest in temporal differences in investment in reproduction and migration, which might be picked up by gene expression differences in the abdomen (where the gonads are located). In total, abdominal tissue was analysed in 10 individuals (five for each treatment) and head tissue in 9 individuals (five and four individuals from the treatments with and without access to host plants for egg laying, respectively). In the head, we found that 88 genes were significantly differentially expressed (p < 0.05 after FDR adjustment) between treatment groups. Of those, 34 genes (0.3\% of all genes analysed) had higher and 44 had lower expression (0.4\%) in the treatment with access to host plants compared to the treatment without host plants (Figure 2A). In the abdomen, the corresponding numbers were 70 differentially expressed genes; 44 (0.4\%) with higher and 26 (0.2\%) with lower expression in the treatment with access to host plants (Figure 2B). A list of the top significantly differentially expressed genes (p < 0.01) and their putative functions is provided in Supplementary Table 2.
+
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=14cm]{‎Vanessa_RNAseq_Figures2.‎001.jpeg}
+\caption{Volcano plots illustrating the relative levels of gene expression in the head (A) and abdomen (B) of adult females (x-axis; \(\log_2\) fold change) in the two treatment groups with and without access to host plants for egg laying. Genes with a fold change difference \( > |2| \) and FDR-adjusted \( p \)-value \( < 0.05 \) are depicted in dark orange (significantly higher expression in the treatment with host plants) and teal (significantly higher expression in the treatment without host plants), respectively, while non-significant genes are illustrated by grey dots. Only selected outlier gene names are shown. Outlier genes with \(\log_2\) fold change values exceeding y-limit are shown by triangles, exact values provided in the supplement. (C) Venn diagram showing the number of overlapping and unique differentially expressed genes between the two tissues (head = orange, abdomen = yellow). (D) Bar plot showing the counts of the enriched (FDR-adjusted \( p < 0.01 \)) gene ontologies for the significantly differentially expressed genes between the treatment groups for both tissues combined. (E) Bar plot illustrating the numbers of significantly differentially expressed genes enriched for KEGG pathways, both tissues combined. The higher hierarchical grouping is indicated by bar colors (legend to the right).}
+
+\end{figure}
+
+We found that significantly differentially expressed genes encompassed a diverse range of functional categories (Figure 2A, B), including immune genes (gloverin, attacin, cytochrome p450, peptidoglycan recognition proteins), metabolic genes (lipase), and genes involved in endoskeleton formation (cuticle protein) (Figure 2, Supplementary Table 2). Of particular interest was the ecdysone oxidase gene, which exhibited a remarkable change in expression in both head and abdomen in the individuals that had access to host plants for egg laying (Figure 2A, B; Note that DESeq2 may sometimes exaggerate outliers (54)).
+
+Among the genes that were differentially expressed between the adult female treatment groups, 11 genes were found in both tissues (Figure 2C). To gain further insights into the associations between functions of differentially expressed genes and increase statistical power, we combined the results from both tissues for GO term enrichment test. Significantly overrepresented GO terms encompassed transmembrane transport, various metabolic processes (including ecdysone biosynthesis), and defense response (Figure 2D, Supplementary Table 3). Consistent with this finding, the analysis of overrepresented KEGG pathways revealed enrichment of different metabolic pathways, in particular lipid, carbohydrate, vitamin, and xenobiotic metabolism (Figure 2E, Supplementary Table 4).
+
+\afterpage{\FloatBarrier}
+\subsection{Gene expression variation associated with food availability during development}
+To complement the analysis in adult females, we focused on investigating differential gene expression across developmental stages in experimental cohorts exposed to environments that varied in food availability and rearing density. Again, we focused on the head and abdomen for the same reasons as indicated above. For the contrast between experimental groups with differences in food availability during development (HDAL versus HDLI), the likelihood ratio tests revealed 745 and 321 significantly differentially expressed genes (FDR-adjusted p-value < 0.05) in the head and abdomen, respectively. Notably, the two sets of genes with differential expression in the two respective tissues demonstrated a high degree of overlap (Jaccard index = 0.1, \( p \)-value = \( 9.6 \times 10^{-30} \); Figure 3A). To check which stages contributed the most to the overall differences in expression patterns between treatment groups, we performed a clustering analysis which groups genes based on the expression patterns across developmental stages, facilitating the identification of genes with similar profiles and potential functional relationships. In head tissue, the most prominent cluster comprised 123 genes (16.5\% of the differentially expressed genes in this tissue; Figure 3B). The majority of expression differences within this cluster were observed in instar III larvae. Similarly, in the abdominal tissue, 149 genes (46.4\% of the differentially expressed genes) formed a distinct cluster. Genes within this cluster predominantly showed differential expression in instar V larvae (Figure 3C).
+
+
+
+The GO term analysis for differentially expressed genes in head tissue revealed both a general enrichment of functions related to metabolic processes and regulation and more specifically enrichment of functions associated with epithelial cell development, sarcomere organization, angiogenesis regulation and blood coagulation (Figure 3D, Supplementary Table 5). Differentially expressed genes in abdominal tissue were predominantly associated with reproductive processes, and neural and immune cell development (Figure 3E, Supplementary Table 6). In addition, a joint KEGG pathway analysis of both tissues unveiled that functions associated with ribosome biogenesis (ko03008) and aflatoxin biosynthesis (ko00254) were overrepresented.
+
+The expression trajectories across developmental stages show that the influence of the environmental factors on gene expression differences between experimental groups, in general, appears to diminish at the pupal and adult stages. To investigate how environmental cues experienced during development are manifested in recently emerged imagines in more detail, we compared differences in gene expression between adult individuals that had experienced different environmental conditions during development specifically (Figure 3 F, G). In head tissue, only six genes (p < 0.05) showed significantly differential expression; \textit{Tret1}, odorant receptor, UDP-glucosyltransferase, esterase and zinc-finger MYM (Supplementary Table 7). These genes were downregulated in response to limited food treatment. In the abdominal tissue, 189 (p < 0.05) genes were found to be differentially expressed between treatment groups. Among the most prominent outliers were cuticle protein (upregulated in response to limited food source), gloverin, glutamine synthetase, tektin, clavesin, gooseberry-neuro, orcokinin and tyrosine (downregulated in response to limited food source) (outliers are listed in Supplementary Table 7). 
+
+
+\begin{figure}[bt]
+%\centering
+\includegraphics[width=12cm]{‎Vanessa_RNAseq_Figures2_FIG3.‎001.jpeg}
+\caption{A summary of the results from the comparison between experimental groups with access to different amounts of food plants during development. (A) Summary of the experiment and a Venn diagram showing the number of differentially expressed genes in each respective tissue (left = head, right = abdomen) and the number of genes differentially expressed in both tissues (center). The star indicates that the number of overlapping genes was significantly higher than expected by chance. (B) and (C) Box plots showing the temporal patterns of differential expression across ontogenetic stages in the head (B) and abdomen (C). Outliers are indicated with circles, and temporal trends of gene expression levels for specific genes are illustrated with lines. (D) and (E) The top 10 most significantly overrepresented GO terms (p < 0.01) for differentially expressed genes in the head (D) and abdomen (E). (F) and (G) Volcano plots showing the relative levels of gene expression in the adult individuals for the head (F) and abdomen (G). Genes that are significantly differentially expressed and meet the threshold (FDR-adjusted \( p \)-value \( < 0.05 \), \(\log_2\) fold change difference \( < |2| \)) are highlighted. Dark orange marks genes that are upregulated in adults in the food limitation treatment [HDLI], while teal spots mark genes that are upregulated in the treatment where larvae had access to unlimited food [HDAL].}
+\end{figure}
+
+\afterpage{\FloatBarrier}
+
+
+\subsection{Gene expression variation associated with rearing density during development}
+To complement the analysis of gene expression variation associated with food plant availability during development, we also compared treatment groups that were reared at different densities (10 larvae versus 1 larva per flask, HDAL versus LDAL). In this comparison, we found a large number of genes differentially expressed in both the head (222 genes) and abdomen (372). There was also significant overlap between the tissues, i.e. a higher proportion of genes were differentially expressed in both tissues than expected by chance (Jaccard Index = 0.2, $\text{p-value} = 1.2 \times 10^{-80}$; Figure 4A).
+
+To investigate the temporal trajectories of differences in expression patterns between treatment groups during development, we again performed a clustering analysis based on the expression patterns across the different developmental stages. In head tissue, the two main clusters contained 143 (38.4\% of the differentially expressed genes in this tissue; Figure 4B) and 69 (18.5\%; Supplementary Figure 1) genes, respectively. Visual inspection clearly showed that expression differences in instar III and V larvae were driving the overall patterns within these clusters (Figure 4B). In the abdominal tissue, 83 genes (37.4\% of the differentially expressed genes in this tissue) formed a distinct cluster (Figure 4C). Again, this cluster was mainly distinguished by considerable differences in gene expression in the larval stages (Figure 4C).
+
+The gene ontology enrichment analysis of functional roles of differentially expressed genes in these clusters revealed that the most enriched functional category was regulation of filopodia assembly in the head (Figure 4D). We also found an enrichment of ontology terms related to sperm maturation, ephrin signaling, and several other functional categories (Figure 4D, Supplementary Table 8). In the abdomen, there was a significant enrichment of GO terms associated with reproductive processes, including functions such as egg formation, egg laying, and mating development (Figure 4E, Supplementary Table 9). In addition, there were several enriched terms associated with signal transduction like ephrin signaling, Ras signal transduction (involved in cell growth, division, and differentiation), Notch signaling (associated with neurogenesis) and JNK signaling (regulation of ubiquitin-dependent processes).
+
+\begin{figure}[bt]
+%\centering
+\includegraphics[width=12cm]{‎Vanessa_RNAseq_fig4.‎001.jpeg}
+\caption{A summary of the results from the comparison between experimental groups, which were reared at different densities during development. (A) Summary of the experiment and a Venn diagram showing the number of differentially expressed genes in each respective tissue (left = head, right = abdomen) and the number of genes with significantly different expression in both tissues (center). The star indicates that the number of overlapping genes was significantly higher than expected by chance. (B) and (C) Box plots showing the temporal patterns of differential expression across ontogenetic stages in the head (B) and abdomen (C). Outliers are indicated with circles, and temporal trends of gene expression levels for specific genes are illustrated with lines. (D) and (E) The top 10 most significantly overrepresented GO terms (p < 0.01) for differentially expressed genes in the head (D) and abdomen (E), respectively. (F) and (G) Volcano plots showing the relative levels of gene expression in the adult female individuals for the head (F) and abdomen (G). Genes that are significantly differentially expressed and meet the threshold (FDR-adjusted \(p\)-value \(< 0.05\), \(\log_2\) fold change difference \(< |2|\)) are highlighted. Dark orange marks genes that are upregulated in adults in low density treatment [LDAL], while teal spots mark genes that are upregulated in the treatment where larvae had access to unlimited food [HDAL].}
+\end{figure}
+\afterpage{\FloatBarrier}
+
+Analogous to the analysis based on food plant availability, we compared differences in gene expression between recently emerged females that had experienced different levels of crowding during development (Figure 4 F, G, Supplementary Table 10). In this comparison, six genes showed significant differences in expression level in head tissue, of which functional information was available for five (Figure 4F). We found that two copies of the SUMO ligase and a trehalose transporter were significantly higher expressed in the low density (LDAL) compared to the high density treatment group (HDAL). The genes pickpocket and NADH dehydrogenase, in contrast, had a significantly higher expression in the HDAL than in the LDAL treatment group. In the abdominal tissue, the peptidoglycan recognition protein (\textit{PGRP}), chitinase, hemocytin, D-arabinitol, and \textit{NCAM} were significantly overexpressed in the LDAL treatment group compared to HDAL, while no genes with known functions had higher expression in HDAL.
+
+\section{Discussion}
+\subsection{Transcriptomic response to availability of host plants in adult female butterflies}
+The ability of individuals to switch between migration and reproduction is a key adaptation for migratory insects in general, and for long-distance migrants in particular (17–19). This capability can also be considered part of the migratory syndrome, which includes a suite of traits that facilitate migration (55). This study addresses the need to investigate the molecular mechanisms underlying the migration-reproduction trade-off, focusing on one of the environmental triggers for initiating or terminating migratory behavior in butterflies—the presence and abundance of host plants for egg-laying (40,56). We identified three major functional categories of genes activated in response to this treatment: hormonal regulation, metabolic regulation, and immunity. Below, we discuss these categories in detail and their connections to reproduction and migration.
+
+Hormonal regulation has been shown to be important in controlling reproductive and migratory physiology and having a central role in the trade-off between reproduction and migration in butterflies (57). Similarly, our results from the analysis of gene expression variation associated with host plant availability for egg laying in adult females \textit{V. cardui} underscore the importance of hormonal regulation for the plastic response to host plant abundance – i.e. we found significant changes in the expression of multiple genes regulating developmental hormones. Here, ecdysone oxidase stood out with a striking difference in expression level between experimental groups. Ecdysone is a steroid hormone crucial for numerous biological processes in metamorphic insects during major developmental transitions, including the maturation of oocytes and control of oviposition (58–60). Ecdysone oxidase in turn regulates the levels of active ecdysone by converting it to 3-dehydroecdysone and vice versa, thereby controlling the availability of active hormones through a rapid feedback mechanism. We propose that increased expression of ecdysone oxidase, triggered by the availability of host plants, modulates these hormone levels, enhancing reproductive investment (61).
+
+Beyond ecdysone, other hormonal regulation pathways like juvenile hormone (JH) significantly contribute to the reproductive-migratory trade-off, as seen in monarch butterflies (25,62). Additionally, genes involved in JH synthesis were notably overexpressed in migrating hoverflies compared to sedentary ones (68). Similar patterns were observed in our study with genes such as juvenile hormone esterase (\textit{JHE}; regulation of juvenile hormone levels; (62,64), and daywake and takeout genes (encoding juvenile hormone binding proteins), \textit{nrf-6} (neuropeptide and hormone receptor), and cytochrome-P450 (control of ecdysone biosynthesis; (65)), suggesting a complex interplay of gene regulation and hormonal crosstalk crucial for adapting to environmental cues. We have also shown previously, using chromatin accessibility profiling, that \textit{JHE} likely is upregulated in adult female butterflies with access to host plants for egg laying (43). Taken together, our observations corroborate that the ecdysone pathway and the regulation of juvenile hormone play pivotal roles in the plastic responses to environmental cues in insects in general (66,67) and that they may constitute key components in the trade-off between migration and reproduction in butterflies in particular.
+
+The role of immunity in migratory syndrome is multifaceted, suggesting energy may be redirected from immune functions to aid migration or enhanced in response to varied pathogens (68,69). Our study revealed a strong immune response in adult females exposed to environments without host plants, evidenced by a large number of upregulated genes. Functional data from a diverse range of candidate genes identified in our study, allows us to speculate on the exact pathways of this response. Notably, multiple peptidoglycan-recognition proteins (\textit{PGRP}s) may guide the recognition of various pathogens (70), initiating the TOLL-signaling pathway and leading to the production of antimicrobial peptides such as attacin (71), gloverin (72), lysozyme (73), and cecropin (74). Although we cannot establish causality between expression differences of immune genes and investment in reproduction or migration, immune gene evolution has been shown to be dynamic in migratory species in general (68) and may be of particular importance in V. cardui where several immune genes are uniquely present in multi-copy arrays (35). 
+
+In addition to immune response adjustments, efficient utilization of energy is of ultimate importance in migratory species. In insects, fat serves as the most efficient source for storage of energy (75,76) and lipids are indeed the main fuel for flight (77). Corroborating that, we observed that pathways associated with metabolism have critical roles in resource allocation trade-offs (71), we found that host plant availability variation resulted in differential expression of multiple genes associated with lipid and carbohydrate metabolism, for example, dihydrodiol dehydrogenase (\textit{DHDH}) and dolihol kinase (\textit{DOLK}) genes (79). 
+
+Our study highlights the central role of hormonal regulation, metabolism, and immunity in butterflies' response to host plant availability. Although our data and approaches do not allow us to establish a causative association between host plant availability and investment in reproduction or migration per se, the gene expression analysis revealed a set of candidate genes that can be used to investigate the molecular underpinnings of the reproduction-migration trade-off in more detail. These findings may extend beyond the classical oogenesis-flight syndrome, suggesting broader applicability in understanding synchronization between reproduction and migration. The next step will be to target key genes in the regulatory pathways detected here, with a particular focus on the ecdysone pathway. It should be noted that the trade-off between reproduction and migration in adult butterflies is likely not exclusively dictated by environmental cues encountered after emergence. As a complementary step, we therefore explored how differences in food plant availability and crowding affect the expression profiles across ontogenetic stages, from larvae to imagines.
+
+\subsection{Effects on gene expression by differences in food plant availability and rearing density during development}
+Both crowding and food resource availability have been shown to impact the timing of development and morphology of migratory insects, which in turn directly affect the flight response norms and migration propensity (80,81). Insect individuals experiencing starvation in general exhibit delayed development (33), prolonged larval stages and reduced body sizes (81), and these effects have also previously been observed in \textit{V. cardui} (82). Similarly, negative associations between larval density and developmental rates have been established (28). This evidence arises from direct measurement of resulting phenotypic traits, while molecular mechanisms involved in the responses are less studied (but see e.g. 30). In our study, transcriptomic signatures of the response to periodic starvation and larval crowding confirmed differences in the activation of developmental genes and pathways in multiple organ systems. Differentially expressed genes were associated with ontology terms such as epithelial cell and dendrite development, sarcomere organization, angiogenesis, and hemocyte proliferation. 
+
+Gene expression profiles suggest that the food limitation treatment appeared to specifically affect neural development. Neural development and sensing are of particular importance for migratory insects, as they can largely influence the plasticity of the response to perceived environmental cues in adults (81).  In our experiment, two candidate genes—odorant receptor 4 and esterase (odorant degrading protein)—were activated in adult individuals who had not experienced food stress as larvae, suggesting enhanced environmental sensing (84). Conversely, the downregulation of the gooseberry-neuro (\textit{GsbN}) transcription factor suggests alterations in central nervous system development (85). We therefore consider these particular genes as key candidates for further investigation of how environmental cues are translated into behavioral responses.
+
+The larval density experiment triggered differential expression of genes related development of reproductive systems, which is illustrated by ontology terms such as sperm individualization and gonad morphogenesis. Early changes in reproductive functions are particularly noteworthy in the context of the trade-off between reproduction and migration in the adult stage, a topic previously discussed in relation to the host plant experiment. These results underscore the role of the male reproductive system as well. Our result is in line with observations in other lepidopterans, such as that \textit{Plodia interpunctella}, and \textit{Mythimna separata}, which have been shown to have increased sperm production in response to crowding (86).
+
+Alterations in metabolism at the molecular level appear to be a consistent response to all environmental cues tested in this study, as evidenced by the earlier-mentioned responses to host-plant presence in adult females, and the impacts of crowding and food scarcity across developmental stages and in adults. Notably, in the context of the starvation treatment, we identified over 200 differentially expressed genes associated with the 'compound metabolic process'. On the individual gene level, we observed differential expression of the trehalose transporter (\textit{Tret1}) in adults who experienced starvation during development. Trehalose is the primary sugar found in insect hemolymph, synthesized in the fat body and subsequently distributed by transporters (87). Alteration of expression of \textit{Tret1} was also directly linked to active migration in insects (63). Among other candidate genes differentially expressed in the density experiment were the metabolic genes NADH dehydrogenase and several chitinases (86). 
+
+Since the analysis spanned multiple developmental stages, from larval instar III to recently emerged imagines, we gained insights into the temporal variation in gene expression and identified critical developmental periods where the effect was particularly pronounced. Notably, the most significant gene expression differences occurred during the larval stages in both experiments, especially in larval instar V—the final stage for \textit{V. cardui} and a critical time point for responding to environmental cues before metamorphosis (89). Our findings highlight genes associated with programmed cell death, such as E3-type small ubiquitin-like modifier (\textit{SUMO}) (90), and show enrichment in the JNK and Ras signaling pathways, essential for the tissue remodeling required during metamorphosis (91). In general, the last larval stage is accompanied by considerable physiological changes and environmental shifts during this period can therefore have particular importance for plastic responses (92).
+
+\section{Conclusions}
+In a host plant experiment designed to trigger the trade-off between migration and reproduction, we observed signatures of gene expression consistent with those expected for the oogenesis-flight syndrome and highlighted the crucial role of hormonal regulation. By subjecting larvae to different environmental cues, food abundance and larval crowding, we examined the early predisposition for migratory plasticity. This approach allowed us to closely track the timing of cue perception throughout development. Our findings revealed the peak of this response during the last larval stage, emphasizing the role of the genes involved in developmental regulation and metabolism. Furthermore, this led us to identify candidate genes and pathways that jointly contribute to the migratory syndrome.
+
+\section*{DATA AVAILABILITY AND BENEFIT-SHARING}
+Raw sequence data (RNA-seq) are available at the European Nucleotide Archive under XXXXXXXX. The scripts used to generate the analyses presented in the paper are archived on GitHub in the following repository: \\
+https://github.com/orgs/EBC-butterfly-genomics-team.
+
+The benefit arising from the utilization of genetic resources in this study is provided through the sharing of the analysis scripts and code, which are freely available and accessible to the research community, consistent with applicable international and national regulations.
+
+\section*{AUTHOR CONTRIBUTIONS}
+NB contributed to the conception and design of the study. Lab work was performed by EP and LH with assistance from KN and AP. Formal analysis and visualization were performed by DS with assistance from VT. DS and NB wrote the manuscript. GT provided samples. NB supervised the study. Funding acquisition was handled by NB, GT, and RV. All authors reviewed and approved the final manuscript.
+
+\section*{CONFLICT OF INTEREST DISCLOSURE}
+The authors declare that they have no conflicts of interest.
+
+
+
+%\subsection{Document class options}
+
+%The \texttt{wiley-article} document class offers the following options:
+
+%\begin{description}
+%\item[\texttt{blind}] Anonymise all author, affiliation, correspondence
+%       and funding information.
+
+%\item[\texttt{lineno}] Adds line numbers.
+
+%\item[\texttt{serif}] Sets the body font to be serif.
+
+%\item[\texttt{twocolumn}] Sets the body text in two-column layout.
+
+%\item[\texttt{num-refs}] Uses the numerical Vancouver bibliography style; see section \ref{sec:bibstyles}.
+
+%\item[\texttt{alpha-refs}] Uses the author-year RSS bibliography style; see section \ref{sec:bibstyles}.
+%\end{description}
+
+%\subsection{Adding Citations and a References List}
+%\label{sec:bibstyles}
+
+%Please use a \verb|.bib| file to store your references. When using Overleaf to prepare your manuscript, you can upload a \verb|.bib| file or import your Mendeley or Zotero library directly as a \verb|.bib| file via the Add Files menu. You can then cite entries from it, like this: \cite{urmson2008autonomous,lees2010theoretical} and \cite{geiger2012we}. Just remember to specify a bibliography style, as well as the filename of the \verb|.bib|.
+
+%You can find a video tutorial here to learn more about BibTeX: \url{https://www.overleaf.com/help/97-how-to-include-a-bibliography-using-bibtex}.
+
+%This template provides two \verb|\documentclass| options for the citation and reference list style: 
+%\begin{description}
+%\item[Numerical style] Use \verb|\documentclass[...,num-refs]{wiley-article}| (Vancouver style)
+%\item[Author-year style] Use \verb|\documentclass[...,alpha-refs]{wiley-article}| (RSS style)
+%\end{description}
+
+%If you are submitting to a journal that uses neither of the above, then instead of specifying one of these options in the document class you should use  \verb|\bibliographystyle| to specify the appropriate \verb|WileyNJD-...| style, and load the \verb|natbib| with the appropriate options as needed. If the journal provides you with an alternative .bst file to use, please upload this first, and then specify it with the \verb|\bibliographystyle| as above.
+
+%\subsection{Usage Examples of \texttt{wiley-article} Options}
+
+%\begin{enumerate}
+%\item Using numerical, sort-by-authors citations:
+%\begin{verbatim}
+%\documentclass[num-refs]{wiley-article}
+%\end{verbatim}
+
+%\item Anonymised submission using author-year citations:
+%\begin{verbatim}
+%\documentclass[blind,alpha-refs]{wiley-article}
+%\end{verbatim}
+
+%\item Using \texttt{unsrtnat} for numerical, in-sequence citations:
+%\begin{verbatim}
+%\documentclass{wiley-article}
+%\usepackage[numbers]{natbib}
+%\bibliographystyle{unsrtnat}
+%\end{verbatim}
+
+%\item Using the \texttt{WileyNJD-AMA} reference style and superscript citations, two-column and serif fonts, for submission to AIChE:
+
+\section*{ACKNOWLEDGEMENTS}
+Acknowledgments
+This work was funded by a research grant from the Swedish Research Council FORMAS (grant \# 2019-00670 to N.B.) and The Swedish Collegium for Advanced Science (Natural Sciences Programme, Knut and Alice Wallenberg Foundation, Postdoc funding for D.S.). R.V. was supported by grant PID2022-139689NB-I00 (MICIU/ AEI/ 10.13039/501100011033 and ERDF, EU) and by grant 2021-SGR-00420 (Departament de Recerca i Universitats, Generalitat de Catalunya). G.T. was supported by grants PID2020-117739GA-I00 MCIN / AEI / 10.13039/ 501100011033, LINKA20399 from the CSIC iLink program and 2021-SGR-01334 (Departament de Recerca i Universitats, Generalitat de Catalunya). The authors acknowledge support from the National Genomics Infrastructure in Stockholm funded by Science for Life Laboratory, the Knut and Alice Wallenberg Foundation and the Swedish Research Council, and SNIC/Uppsala Multidisciplinary Center for Advanced Computational Science for assistance with massively parallel sequencing and access to the UPPMAX computational infrastructure. The computations were enabled by resources provided by the National Academic Infrastructure for Supercomputing in Sweden (NAISS) and the Swedish National Infrastructure for Computing (SNIC) in Uppsala, partially funded by the Swedish Research Council through grant agreements no. 2022-06725 and no. 2018-05973. We thank Jesper Boman and all members of the Backström lab for helpful discussions. 
+
+\section*{Bibliography}
+\begin{enumerate}
+\item Bell, A. M. (2023). The evolution of decision-making mechanisms under competing demands. Trends in Ecology \& Evolution.
+\item Stearns, S. C. (1989). Trade-offs in life-history evolution. Functional Ecology, 3(3), 259.
+\item Aidley, D. J. (Ed.). (1981). Animal migration. Cambridge: Cambridge University Press. (Seminar series).
+\item Williams, C. B. (1958). Insect migration. London: Collins. (New Naturalist; vol. xiii).
+\item Williams, C. B. (1930). The migration of butterflies. Edinburgh: Oliver \& Boyd. (Biological Monographs and Manuals; vol. 8).
+\item Satterfield, D. A., Sillett, T. S., Chapman, J. W., Altizer, S., \& Marra, P. P. (2020). Seasonal insect migrations: massive, influential, and overlooked. Frontiers in Ecology and the Environment.
+\item Dingle, H. (2014). Migration: The biology of life on the move. Oxford: Oxford University Press.
+
+\item Suchan, T., Talavera, G., Sáez, L., Ronikier, M., \& Vila, R. (2019). Pollen metabarcoding as a tool for tracking long-distance insect migrations. Molecular Ecology Resources, 19(1), 149–162.
+
+\item Jia, X., Liu, S., Zheng, H., Li, B., Qi, Q., Wei, L., et al. (2015). Non-uniqueness of factors constraint on the codon usage in \textit{Bombyx mori}. BMC Genomics, 16(1), 356.
+
+\item Reich, M., Shipilina, D., Talla, V., Bahleman, F., Kébé, K., Berger, J., et al. (2023). Isotope geolocation and population genomics in \textit{Vanessa cardui}: Short- and long-distance migrants are genetically undifferentiated. Preprint bioarxiv.
+
+\item Liedvogel, M., Åkesson, S., \& Bensch, S. (2011). The genetics of migration on the move. Trends in Ecology \& Evolution, 26(11), 561–569.
+
+\item Kang, L., Chen, X., Zhou, Y., Liu, B., Zheng, W., Li, R., et al. (2004). The analysis of large-scale gene expression correlated to the phase changes of the migratory locust. Proceedings of the National Academy of Sciences, 101(51), 17611–17615.
+
+\item Merlin, C., \& Liedvogel, M. (2019). The genetics and epigenetics of animal migration and orientation: Birds, butterflies and beyond. Journal of Experimental Biology, 222(1, SI).
+
+\item Guerra, P. A. (2011). Evaluating the life-history trade-off between dispersal capability and reproduction in wing dimorphic insects: A meta-analysis. Biological Reviews, 86(4), 813–835.
+
+\item Hanski, I., Saastamoinen, M., \& Ovaskainen, O. (2006). Dispersal-related life-history trade-offs in a butterfly metapopulation. Journal of Animal Ecology, 75(1), 91–100.
+
+\item Tigreros, N., \& Davidowitz, G. (2019). Flight-fecundity tradeoffs in wing-monomorphic insects. Advances in Insect Physiology, 56, 1–41.
+
+\item Johnson, C. G. (1963). Physiological factors in insect migration by flight. Nature, 198(4879), 423–427.
+
+\item Rankin, M. A., McAnelly, M. L., \& Bodenhamer, J. E. (1986). The oogenesis-flight syndrome revisited. In: Danthanarayana W, editor. Insect flight. Berlin, Heidelberg: Springer Berlin Heidelberg. p. 27–48. (Proceedings in Life Sciences).
+
+\item Rankin, M. A., Hampton, E. N., \& Summy, K. R. (1994). Investigations of the oogenesis-flight syndrome in \textit{Anthonomus grandis} (Coleoptera: Curculionidae) using tethered flight tests. Journal of Insect Behavior, 7(6), 795–810.
+
+\item Cheng, Y. X., Luo, L. Z., Jiang, X. F., \& Sappington, T. W. (2012). Synchronized oviposition triggered by migratory flight intensifies larval outbreaks of beet webworm. PLoS ONE, 7(2), e31562.
+
+\item Malcolm, S. B., Vargas, N. R., Rowe, L., Stevens, J., Armagost, J. E., \& Johnson, A. C. (2018). Sequential partial migration across monarch generations in Michigan. Animal Migration, 5(1), 104–114.
+
+\item Han, L. Z., Gu, H. N., Zhai, B. P., \& Zhang, X. X. (2008). Reproduction-flight relationship in the beet armyworm, \textit{Spodoptera exigua} (Lepidoptera: Noctuidae). Environmental Entomology, 37(2), 374–381.
+
+\item Gu, H., Hughes, J., \& Dorn, S. (2006). Trade-off between mobility and fitness in \textit{Cydia pomonella} L. (Lepidoptera: Tortricidae). Ecological Entomology, 31(1), 68–74.
+
+\item Oliveira, G. A., Baptista, D. L., Guimarães-Motta, H., Almeida, I. C., Masuda, H., \& Atella, G. C. (2006). Flight-oogenesis syndrome in a blood-sucking bug: Biochemical aspects of lipid metabolism. Archives of Insect Biochemistry and Physiology, 62(4), 164–175.
+
+\item Green, D. A., \& Kronforst, M. R. (2019). Monarch butterflies use an environmentally sensitive, internal timer to control overwintering dynamics. Molecular Ecology, 28(16), 3642–3655.
+
+\item Herman, W. S. (1981). Studies on the adult reproductive diapause of the monarch butterfly, \textit{Danaus plexippus}. Biological Bulletin, 160(1), 89–106.
+
+\item Angelo, M. J., \& Slansky, F. Jr. (1984). Body building by insects: Trade-offs in resource allocation with particular reference to migratory species. Florida Entomologist, 67(1), 22.
+
+%\item Bauerfeind, S. S., \& Fischer, K. (2005). Effects of food stress and density in different life stages on reproduction in a butterfly. Oikos, 111(3), 514–528.
+
+\item Butler, C. G., \& Innes, J. M. (1936). A comparison of the rate of metabolic activity in the solitary and migratory phases of \textit{Locusta migratoria}. Proceedings of the Royal Society of London Series B - Biological Sciences, 119(814), 296–304.
+
+\item Wang, S., Yang, H., Hu, Y., Zhang, C., \& Fan, D. (2023). Multi-omics reveals the effect of population density on the phenotype, transcriptome and metabolome of \textit{Mythimna separata}. Insects, 14(1), 68.
+
+\item Boggs, C. L., \& Freeman, K. D. (2005). Larval food limitation in butterflies: Effects on adult resource allocation and fitness. Oecologia, 144(3), 353–361.
+
+\item Niitepõld, K. (2019). Effects of flight and food stress on energetics, reproduction, and lifespan in the butterfly \textit{Melitaea cinxia}. Oecologia, 191(2), 271–283.
+
+\item Chen, Y., \& Ruberson, J. R. (2008). Starvation effects on larval development of beet armyworm (Lepidoptera: Noctuidae). Journal of Entomological Science, 43(2), 247–253.
+
+\item García-Berro, A., Talla, V., Vila, R., Wai, H. K., Shipilina, D., Chan, K. G., et al. (2023). Migratory behaviour is positively associated with genetic diversity in butterflies. Molecular Ecology, 32(3), 560–574.
+
+\item Shipilina, D., Näsvall, K., Höök, L., Vila, R., Talavera, G., \& Backström, N. (2022). Linkage mapping and genome annotation give novel insights into gene family expansions and regional recombination rate variation in the painted lady (\textit{Vanessa cardui}) butterfly. Genomics, 114(6), 110481.
+
+\item Lohse, K., Wright, C., Talavera, G., García-Berro, A., Darwin Tree of Life Barcoding collective, Wellcome Sanger Institute Tree of Life programme, et al. (2021). The genome sequence of the painted lady, \textit{Vanessa cardui} Linnaeus 1758. Wellcome Open Research, 6, 324.
+
+\item Talavera, G., \& Vila, R. (2016). Discovery of mass migration and breeding of the painted lady butterfly \textit{Vanessa cardui} in the Sub-Sahara: the Europe-Africa migration revisited. Biological Journal of the Linnean Society. 
+
+\item Talavera, G., Bataille, C., Benyamini, D., Gascoigne-Pees, M., \& Vila, R. (2018). Round-trip across the Sahara: Afrotropical painted lady butterflies recolonize the Mediterranean in early spring. Biology Letters, 14(6).
+
+\item Stefanescu, C., Puig-Montserrat, X., Samraoui, B., Izquierdo, R., Ubach, A., \& Arrizabalaga, A. (2017). Back to Africa: autumn migration of the painted lady butterfly \textit{Vanessa cardui} is timed to coincide with an increase in resource availability: Autumn migration of Vanessa cardui. Ecol Entomol. 42(6):737–47
+
+\item Stefanescu, C., Puig-Montserrat, X., Samraoui, B., Izquierdo, R., Ubach, A., \& Arrizabalaga, A. (2017). Back to Africa: Autumn migration of the painted lady butterfly \textit{Vanessa cardui} is timed to coincide with an increase in resource availability. Ecological Entomology, 42(6), 737–747.
+
+\item Stefanescu, C., Ubach, A., \& Wiklund, C. (2021). Timing of mating, reproductive status and resource availability in relation to migration in the painted lady butterfly. Animal Behaviour, 172, 145–153.
+
+\item Wiklund, C., \& Friberg, M. (2022). Testing the migration syndrome: Comparative fecundity of migratory and non-migratory nymphaline butterflies. Ecological Entomology, 47(6), 1061–1067.
+
+\item Boman, J., Zhu, Y., Höök, L., Vila, R., Talavera, G., \& Backström, N. (2023). Environmental stress during larval development induces DNA methylation shifts in the migratory painted lady butterfly (\textit{Vanessa cardui}). Molecular Ecology, 32(13), 3513–3523.
+
+\item Näsvall, K., Shipilina, D., Vila, R., Talavera, G., \& Backström, N. (2023). Resource availability affects activity profiles of regulatory elements in a long-distance butterfly migrant. Preprints Authorea.
+
+\item Ewels, P. A., Peltzer, A., Fillinger, S., Patel, H., Alneberg, J., Wilm, A., et al. (2020). The nf-core framework for community-curated bioinformatics pipelines. Nature Biotechnology, 38(3), 276–278.
+
+\item Harshil, P., Ewels, P., Peltzer, A., Botvinnik, O., Sturm, G., Moreno, D., et al. (2023). nf-core/rnaseq: nf-core/rnaseq v3.12.0 - Osmium Octopus. Zenodo.
+Available from: https://zenodo.org/record/1400710
+
+\item Martin, M. (2011). Cutadapt removes adapter sequences from high-throughput sequencing reads. EMBnet.journal, 17(1), 10.
+
+\item Dobin, A., Davis, C. A., Schlesinger, F., Drenkow, J., Zaleski, C., Jha, S., et al. (2013). STAR: ultrafast universal RNA-seq aligner. Bioinformatics, 29(1), 15–21.
+
+\item Patro, R., Duggal, G., Love, M. I., Irizarry, R. A., \& Kingsford, C. (2017). Salmon provides fast and bias-aware quantification of transcript expression. Nature Methods, 14(4), 417–419.
+
+\item Love, M. I., Huber, W., \& Anders, S. (2014). Moderated estimation of fold change and dispersion for RNA-seq data with DESeq2. Genome Biology, 15(12), 550.
+
+\item Shen, L. S. (2017). GeneOverlap. Bioconductor. Available from: https://bioconductor.org/packages/GeneOverlap
+
+\item Wu, T., Hu, E., Xu, S., Chen, M., Guo, P., Dai, Z., et al. (2021). clusterProfiler 4.0: A universal enrichment tool for interpreting omics data. The Innovation, 2(3), 100141.
+
+\item Altschul, S. F., Gish, W., Miller, W., Myers, E. W., \& Lipman, D. J. (1990). Basic local alignment search tool. Journal of Molecular Biology, 215(3), 403–410.
+
+\item Alexa, A., \& Rahnenfuhrer, J. (2021). topGO: Enrichment analysis for gene ontology. Bioconductor version: Release (3.13). Available from: \url{https://bioconductor.org/packages/topGO}
+
+\item Li, Y., Ge, X., Peng, F., Li, W., \& Li, J. J. (2022). Exaggerated false positives by popular differential expression methods when analyzing human population samples. Genome Biology, 23(1), 79.
+
+\item Dingle, H. (2001). The evolution of migratory syndromes in insects. In: Woiwood, I. P., Reynolds, D. R., \& Thomas, C. D., editors. Insect movement: mechanisms and consequences. Proceedings of the Royal Entomological Society’s 20th Symposium, London, UK, September 1999. 1st ed. UK: CABI Publishing. p. 159–181. Available from: \url{http://www.cabidigitallibrary.org/doi/10.1079/9780851994567.0159}
+
+\item Gamberale-Stille, G., Söderlind, L., Janz, N., \& Nylin, S. (2014). Host plant choice in the comma butterfly-larval choosiness may ameliorate effects of indiscriminate oviposition. Insect Science, 21(4), 499–506.
+
+\item Rankin, M. A. (1991). Endocrine effects on migration. American Zoologist, 31(1), 217–230.
+
+\item Niwa, R., \& Niwa, Y. S. (2014). Enzymes for ecdysteroid biosynthesis: Their biological functions in insects and beyond. Bioscience, Biotechnology, and Biochemistry, 78(8), 1283–1292.
+
+\item Robbins, W. E., Kaplanis, J. N., Thompson, M. J., Shortino, T. J., Cohen, C. F., \& Joyner, S. C. (1968). Ecdysones and analogs: Effects on development and reproduction of insects. Science, 161(3846), 1158–1160.
+
+\item Swevers, L., \& Iatrou, K. (2003). The ecdysone regulatory cascade and ovarian development in lepidopteran insects: Insights from the silkmoth paradigm. Insect Biochemistry and Molecular Biology, 33(12), 1285–1297.
+
+\item Cheng, D., Cheng, T., Yang, X., Zhang, Q., Fu, J., \& Feng, T. (2018). The genome-wide transcriptional regulatory landscape of ecdysone in the silkworm. Epigenetics \& Chromatin, 11(1), 48.
+
+\item Herman, W. S., \& Tatar, M. (2001). Juvenile hormone regulation of longevity in the migratory monarch butterfly. Proceedings of the Royal Society of London. Series B: Biological Sciences, 268(1485), 2509–2514.
+
+\item Doyle, T., Jimenez-Guri, E., Hawkes, W. L. S., Massy, R., Mantica, F., Permanyer, J., et al. (2022). Genome-wide transcriptomic changes reveal the genetic pathways involved in insect migration. Molecular Ecology, 31(16), 4332–4350.
+
+\item Zhang, L., Cheng, L., Chapman, J. W., Sappington, T. W., Liu, J., Cheng, Y., et al. (2020). Juvenile hormone regulates the shift from migrants to residents in adult oriental armyworm, \textit{Mythimna separata}. Scientific Reports, 10(1), 11626.
+
+\item Namiki, T., Niwa, R., Sakudoh, T., Shirai, K., Takeuchi, H., \& Kataoka, H. (2005). Cytochrome P450 CYP307A1/Spook: A regulator for ecdysone synthesis in insects. Biochemical and Biophysical Research Communications, 337(1), 367–374.
+
+\item Dingle, H., \& Winchell, R. (1997). Juvenile hormone as a mediator of plasticity in insect life histories. Archives of Insect Biochemistry and Physiology, 35(4), 359–373.
+
+\item Lafuente, E., \& Beldade, P. (2019). Genomics of developmental plasticity in animals. Frontiers in Genetics, 10(JUL), 1–18.
+
+\item O’Connor, E. A., Cornwallis, C. K., Hasselquist, D., Nilsson, J. Å., \& Westerdahl, H. (2018). The evolution of immunity in relation to colonization and migration. Nature Ecology \& Evolution, 2(5), 841–849.
+
+\item Shaw, A. K., Levet, M., \& Binning, S. A. (2023). A unified evolutionary framework for understanding parasite infection and host migratory behaviour. Ecology Letters, 26(11), 1987–2002.
+
+\item Tong, D., Zhang, L., Wu, N., Xie, D., Fang, G., Coates, B. S., et al. (2022). The oriental armyworm genome yields insights into the long-distance migration of noctuid moths. Cell Reports, 41(12), 111843.
+
+\item Buonocore, F., Fausto, A. M., Della Pelle, G., Roncevic, T., Gerdol, M., \& Picchietti, S. (2021). Attacins: A promising class of insect antimicrobial peptides. Antibiotics, 10(2), 212.
+
+\item Xu, X. X., Jin, F. L., Wang, Y. S., Freed, S., Hu, Q. B., \& Ren, S. X. (2015). Molecular cloning and characterization of gloverin from the diamondback moth, \textit{Plutella xylostella} L. and its interaction with bacterial membrane. World Journal of Microbiology and Biotechnology, 31(10), 1529–1541.
+
+\item In Seok, B., \& Yoe, S. M. (2005). Purification and cDNA cloning of lysozyme II from cabbage butterfly, Artogeia rapae larvae. Entomological Research, 35(4), 207–211.
+
+\item Lee, E., Shin, A., \& Kim, Y. (2015). Anti-inflammatory activities of cecropin A and its mechanism of action. Archives of Insect Biochemistry and Physiology, 88(1), 31–44.
+
+\item Arrese, E. L., \& Soulages, J. L. (2010). Insect fat body: Energy, metabolism, and regulation. Annual Review of Entomology, 55(1), 207–225.
+
+\item Beenakkers, A. M. T., Van Der Horst, D. J., \& Van Marrewijk, W. J. A. (1981). Role of lipids in energy metabolism. In: Downer, R. G. H., editor. Energy metabolism in insects. Boston, MA: Springer US. p. 53–100. Available from: \url{http://link.springer.com/10.1007/978-1-4615-9221-1_3}
+
+\item Brower, L. P., Fink, L. S., \& Walford, P. (2006). Fueling the fall migration of the monarch butterfly. Integrative and Comparative Biology, 46(6), 1123–1142.
+
+\item Bhaumik, V., \& Kunte, K. (2018). Female butterflies modulate investment in reproduction and flight in response to monsoon-driven migrations. Oikos, 127(2), 285–296.
+
+\item Jones, C. M., Papanicolaou, A., Mironidis, G. K., Vontas, J., Yang, Y., Lim, K. S., et al. (2015). Genome-wide transcriptional signatures of migratory flight activity in a globally invasive insect pest. Molecular Ecology, 24(19), 4901–4911.
+
+\item Bhavanam, S., \& Trewick, S. A. (2022). Effects of population density on adult morphology and life-history traits of female Mediterranean flour moth, \textit{Ephestia kuehniella} (Lepidoptera: Pyralidae). European Journal of Entomology, 119, 191–200.
+
+\item Zhang, D. W., Xiao, Z. J., Zeng, B. P., \& Li, K., Tang, Y. L. (2019). Insect behavior and physiological adaptation mechanisms under starvation stress. Frontiers in Physiology, 10, 163.
+
+\item Kelly, L., \& Debinski, D. M. (1999). Effects of larval food-limitation on \textit{Vanessa cardui} Linnaeus (Lepidoptera: Nymphalidae). American Midland Naturalist, 141(2), 315–322.
+
+\item Bauerfeind, S. S., \& Fischer, K. (2005). Effects of food stress and density in different life stages on reproduction in a butterfly. Oikos, 111(3), 514–528.
+
+\item Godoy, R., Machuca, J., Venthur, H., Quiroz, A., \& Mutis, A. (2021). An overview of antennal esterases in Lepidoptera. Frontiers in Physiology, 12, 643281.
+
+\item Bonneaud, N., Layalle, S., Colomb, S., Jourdan, C., Ghysen, A., Severac, D., et al. (2017). Control of nerve cord formation by Engrailed and Gooseberry-Neuro: A multi-step, coordinated process. Developmental Biology, 432(2), 273–285.
+
+\item Gage, M. J. G. (1995). Continuous variation in reproductive strategy as an adaptive response to population density in the moth \textit{Plodia interpunctella}. Proceedings of the Royal Society of London Series B: Biological Sciences, 261(1360), 25–30.
+
+\item Kikawada, T., Saito, A., Kanamori, Y., Nakahara, Y., Iwata, K., \& Tanaka, D., et al. (2007). Trehalose transporter 1, a facilitated and high-capacity trehalose transporter, allows exogenous trehalose uptake into cells. Proceedings of the National Academy of Sciences, 104(28), 11585–11590.
+
+\item Morimoto, J., Wenzel, M., Derous, D., Henry, Y., \& Colinet, H. (2022). The transcriptomic signature of responses to larval crowding in \textit{Drosophila melanogaster}. Insect Science, 29(6), 1744-7917.
+
+\item Truman, J. W., \& Riddiford, L. M. (2019). The evolution of insect metamorphosis: A developmental and endocrine view. Philosophical Transactions of the Royal Society B: Biological Sciences, 374(1783), 20190070.
+
+\item Enserink, J. M. (2015). Sumo and the cellular stress response. Cell Division, 10(1), 4.
+
+\item Tettamanti, G., \& Casartelli, M. (2019). Cell death during complete metamorphosis. Philosophical Transactions of the Royal Society B: Biological Sciences, 374(1783), 20190065.
+
+\item Mirth, C. K., Saunders, T. E., \& Amourda, C. (2021). Growing up in a changing world: Environmental regulation of development in insects. Annual Review of Entomology, 66(1), 81–99.
+
+
+\end{enumerate}
+
+
+
+%\section*{conflict of interest}
+%You may be asked to provide a conflict of interest statement during the submission process. Please check the journal's author guidelines for details on what to include in this section. Please ensure you liaise with all co-authors to confirm agreement with the final statement.
+
+%\section*{Supporting Information}
+
+%Supporting information is information that is not essential to the article, but provides greater depth and background. It is hosted online and appears without editing or typesetting. It may include tables, figures, videos, datasets, etc. More information can be found in the journal's author guidelines or at \url{http://www.wileyauthors.com/suppinfoFAQs}. Note: if data, scripts, or other artefacts used to generate the analyses presented in the paper are available via a publicly available data repository, authors should include a reference to the location of the material within their paper.
+
+%\printendnotes
+
+% Submissions are not required to reflect the precise reference formatting of the journal (use of italics, bold etc.), however it is important that all key elements of each reference are included.
+%\bibliography{sample}
+
+%\begin{biography}[example-image-1x1]{A.~One}
+%Please check with the journal's author guidelines whether author biographies are required. They are usually only included for review-type articles, and typically require photos and brief biographies (up to 75 words) for each author.
+%\bigskip
+%\bigskip
+%\end{biography}
+
+%\graphicalabstract{example-image-1x1}{Please check the journal's author guildines for whether a graphical abstract, key points, new findings, or other items are required for display in the Table of Contents.}
+
+\end{document}
